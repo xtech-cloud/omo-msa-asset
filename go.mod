@@ -1,6 +1,6 @@
 module omo.msa.asset
 
-go 1.13
+go 1.15
 
 replace google.golang.org/grpc => github.com/grpc/grpc-go v1.26.0
 
@@ -14,7 +14,7 @@ require (
 	github.com/satori/go.uuid v1.2.0
 	github.com/sirupsen/logrus v1.4.2
 	github.com/tidwall/gjson v1.6.0
-	github.com/xtech-cloud/omo-msp-asset v1.0.2
+	github.com/xtech-cloud/omo-msp-asset v1.1.5
 	go.mongodb.org/mongo-driver v1.3.4
 	google.golang.org/protobuf v1.24.0 // indirect
 	gopkg.in/yaml.v2 v2.2.4

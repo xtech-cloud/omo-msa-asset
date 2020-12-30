@@ -16,11 +16,11 @@ type OwnerInfo struct {
 	assets []*AssetInfo
 }
 
-func AllOwners() []*OwnerInfo {
+func (mine *cacheContext)AllOwners() []*OwnerInfo {
 	return cacheCtx.owners
 }
 
-func GetOwner(uid string) *OwnerInfo {
+func (mine *cacheContext)GetOwner(uid string) *OwnerInfo {
 	for i := 0;i < len(cacheCtx.owners);i += 1{
 		if cacheCtx.owners[i].UID == uid {
 			return cacheCtx.owners[i]
@@ -68,6 +68,7 @@ func (mine *OwnerInfo)CreateAsset(info *AssetInfo) error {
 	db.MD5 = info.MD5
 	db.Version = info.Version
 	db.Language = info.Language
+	db.Snapshot = info.Snapshot
 
 	err := nosql.CreateAsset(db)
 	if err == nil {

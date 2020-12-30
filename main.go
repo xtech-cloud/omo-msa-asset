@@ -35,6 +35,7 @@ func main() {
 	service.Init()
 	// Register Handler
 	_ = proto.RegisterAssetServiceHandler(service.Server(), new(grpc.AssetService))
+	_ = proto.RegisterThumbServiceHandler(service.Server(), new(grpc.ThumbService))
 
 	app, _ := filepath.Abs(os.Args[0])
 

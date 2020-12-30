@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/micro/go-micro/v2/config"
 	"github.com/micro/go-micro/v2/config/encoder/yaml"
@@ -75,19 +76,25 @@ func mergeFile(_config config.Config) {
 
 func mergeConsul(_config config.Config) {
 	consulKey := configDefine.Prefix + configDefine.Key
-	for _, addr := range configDefine.Address {
-		consulSource := consul.NewSource(
-			consul.WithAddress(addr),
-			consul.WithPrefix(configDefine.Prefix),
-			consul.StripPrefix(true),
-			source.WithEncoder(yaml.NewEncoder()),
-		)
-		err := _config.Load(consulSource)
-		if nil == err {
-			logger.Infof("load config %v from %v success", consulKey, addr)
-			break
-		} else {
-			logger.Errorf("load config %v from %v failed: %v", consulKey, addr, err)
+Loop:
+	for {
+		select {
+		case <-time.After(time.Second * time.Duration(1)):
+			for _, addr := range configDefine.Address {
+				consulSource := consul.NewSource(
+					consul.WithAddress(addr),
+					consul.WithPrefix(configDefine.Prefix),
+					consul.StripPrefix(true),
+					source.WithEncoder(yaml.NewEncoder()),
+				)
+				err := _config.Load(consulSource)
+				if nil == err {
+					logger.Infof("load config %v from %v success", consulKey, addr)
+					break Loop
+				} else {
+					logger.Errorf("load config %v from %v failed: %v", consulKey, addr, err)
+				}
+			}
 		}
 	}
 	_config.Get(configDefine.Key).Scan(&Schema)
@@ -166,7 +173,9 @@ func Setup() {
 	if "file" == configDefine.Source {
 		mergeFile(conf)
 	} else if "consul" == configDefine.Source {
-		mergeConsul(conf)
+		if mode != "debug" {
+			mergeConsul(conf)
+		}
 	} else if "etcd" == configDefine.Source {
 		mergeEtcd(conf)
 	}

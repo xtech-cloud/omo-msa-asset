@@ -2,7 +2,7 @@ package grpc
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	pb "github.com/xtech-cloud/omo-msp-asset/proto/asset"
 	"omo.msa.asset/cache"
 )
@@ -28,15 +28,30 @@ func switchAsset(owner string, info *cache.AssetInfo) *pb.AssetInfo {
 	tmp.Md5 = info.MD5
 	tmp.Version = info.Version
 	tmp.Language = info.Language
+	tmp.Thumbs = make([]*pb.ThumbBrief, 0, len(info.Thumbs))
+	for _, thumb := range info.Thumbs {
+		tmp.Thumbs = append(tmp.Thumbs, switchThumbBrief(thumb))
+	}
+	return tmp
+}
+
+func switchThumbBrief(info *cache.ThumbInfo) *pb.ThumbBrief {
+	tmp := new(pb.ThumbBrief)
+	tmp.Uid = info.UID
+	tmp.Owner = info.Owner
+	tmp.Face = info.Face
+	tmp.Url = info.URL
+	tmp.Probably = info.Probably
 	return tmp
 }
 
 func (mine *AssetService)AddOne(ctx context.Context, in *pb.ReqAssetAdd, out *pb.ReplyAssetOne) error {
+	path := "asset.addOne"
 	if len(in.Owner) < 1 {
-		out.ErrorCode = pb.ResultStatus_Empty
-		return errors.New("the scene is empty")
+		out.Status = outError(path, "the owner is empty", pb.ResultStatus_Empty)
+		return nil
 	}
-	owner := cache.GetOwner(in.Owner)
+	owner := cache.Context().GetOwner(in.Owner)
 	info := new(cache.AssetInfo)
 	info.Name = in.Name
 	info.MD5 = in.Md5
@@ -50,82 +65,134 @@ func (mine *AssetService)AddOne(ctx context.Context, in *pb.ReqAssetAdd, out *pb
 	info.Creator = in.Operator
 	err := owner.CreateAsset(info)
 	if err != nil {
-		out.ErrorCode = pb.ResultStatus_DBException
-	}else{
-		out.Info = switchAsset(in.Owner, info)
+		out.Status = outError(path, err.Error(), pb.ResultStatus_DBException)
+		return nil
 	}
-	return err
-}
-
-func (mine *AssetService)GetOne(ctx context.Context, in *pb.RequestInfo, out *pb.ReplyAssetOne) error {
-	if len(in.Uid) < 1 {
-		out.ErrorCode = pb.ResultStatus_Empty
-		return errors.New("the asset is empty")
-	}
-	if len(in.Owner) < 1 {
-		info := cache.GetAsset(in.Uid)
-		if info == nil {
-			out.ErrorCode = pb.ResultStatus_NotExisted
-			return errors.New("the asset not found")
-		}
-		out.Info = switchAsset(in.Owner, info)
-	}else{
-		owner := cache.GetOwner(in.Owner)
-		info := owner.GetAsset(in.Uid)
-		if info == nil {
-			out.ErrorCode = pb.ResultStatus_NotExisted
-			return errors.New("the asset not found")
-		}
-		out.Info = switchAsset(in.Owner, info)
-	}
-
+	out.Info = switchAsset(in.Owner, info)
+	out.Status = outLog(path, out)
 	return nil
 }
 
-func (mine *AssetService)RemoveOne(ctx context.Context, in *pb.RequestInfo, out *pb.ReplyAssetOne) error {
-
+func (mine *AssetService)GetOne(ctx context.Context, in *pb.RequestInfo, out *pb.ReplyAssetOne) error {
+	path := "asset.getOne"
 	if len(in.Uid) < 1 {
-		out.ErrorCode = pb.ResultStatus_Empty
-		return errors.New("the asset is empty")
+		out.Status = outError(path, "the asset is empty", pb.ResultStatus_Empty)
+		return nil
+	}
+	if len(in.Owner) < 1 {
+		info := cache.Context().GetAsset(in.Uid)
+		if info == nil {
+			out.Status = outError(path, "the asset not found", pb.ResultStatus_NotExisted)
+			return nil
+		}
+		out.Info = switchAsset(in.Owner, info)
+	}else{
+		owner := cache.Context().GetOwner(in.Owner)
+		info := owner.GetAsset(in.Uid)
+		if info == nil {
+			out.Status = outError(path, "the asset not found", pb.ResultStatus_NotExisted)
+			return nil
+		}
+		out.Info = switchAsset(in.Owner, info)
+	}
+	out.Status = outLog(path, out)
+	return nil
+}
+
+func (mine *AssetService)RemoveOne(ctx context.Context, in *pb.RequestInfo, out *pb.ReplyInfo) error {
+	path := "asset.removeOne"
+	if len(in.Uid) < 1 {
+		out.Status = outError(path, "the asset is empty", pb.ResultStatus_Empty)
+		return nil
 	}
 	var err error
 	if len(in.Owner) < 1 {
-		err = cache.RemoveAsset(in.Uid, in.Operator)
+		err = cache.Context().RemoveAsset(in.Uid, in.Operator)
 	}else{
-		owner := cache.GetOwner(in.Owner)
+		owner := cache.Context().GetOwner(in.Owner)
 		err = owner.RemoveAsset(in.Uid, in.Operator)
 	}
 	if err != nil {
-		out.ErrorCode = pb.ResultStatus_DBException
+		out.Status = outError(path, err.Error(), pb.ResultStatus_DBException)
+		return nil
 	}
-	return err
+	out.Status = outLog(path, out)
+	return nil
 }
 
 func (mine *AssetService)GetList(ctx context.Context, in *pb.ReqAssetList, out *pb.ReplyAssetList) error {
+	path := "asset.getList"
 	out.List = make([]*pb.AssetInfo, 0, len(in.List))
 	for _, val := range in.List {
-		info := cache.GetAsset(val)
+		info := cache.Context().GetAsset(val)
 		if info != nil {
 			out.List = append(out.List, switchAsset(info.Owner, info))
 		}
 	}
+	out.Status = outLog(path, fmt.Sprintf("the length = %d", len(out.List)))
 	return nil
 }
 
 func (mine *AssetService)GetByOwner(ctx context.Context, in *pb.RequestInfo, out *pb.ReplyAssetList) error {
+	path := "asset.getByOwner"
 	if len(in.Owner) < 1 {
-		return errors.New("the owner is empty")
+		out.Status = outError(path, "the owner is empty", pb.ResultStatus_Empty)
+		return nil
 	}
-	owner := cache.GetOwner(in.Owner)
+	owner := cache.Context().GetOwner(in.Owner)
 	if owner == nil {
-		return errors.New("the owner not found")
+		out.Status = outError(path, "the owner not found", pb.ResultStatus_NotExisted)
+		return nil
 	}
 	out.Owner = in.Owner
 	out.List = make([]*pb.AssetInfo, 0, len(owner.Assets()))
 	for _, val := range owner.Assets() {
 		out.List = append(out.List, switchAsset(in.Owner, val))
 	}
+	out.Status = outLog(path, fmt.Sprintf("the length = %d", len(out.List)))
 	return nil
 }
+
+func (mine *AssetService)UpdateSnapshot(ctx context.Context, in *pb.ReqAssetFlag, out *pb.ReplyInfo) error {
+	path := "asset.updateSnapshot"
+	if len(in.Uid) < 1 {
+		out.Status = outError(path, "the uid is empty", pb.ResultStatus_Empty)
+		return nil
+	}
+	info := cache.Context().GetAsset(in.Uid)
+	if info == nil {
+		out.Status = outError(path, "the asset not found", pb.ResultStatus_NotExisted)
+		return nil
+	}
+	err := info.UpdateSnapshot(in.Operator, in.Flag)
+	if err != nil {
+		out.Status = outError(path, err.Error(), pb.ResultStatus_DBException)
+		return nil
+	}
+	out.Status = outLog(path, out)
+	return nil
+}
+
+func (mine *AssetService)UpdateSmall(ctx context.Context, in *pb.ReqAssetFlag, out *pb.ReplyInfo) error {
+	path := "asset.updateSmall"
+	if len(in.Uid) < 1 {
+		out.Status = outError(path, "the uid is empty", pb.ResultStatus_Empty)
+		return nil
+	}
+	info := cache.Context().GetAsset(in.Uid)
+	if info == nil {
+		out.Status = outError(path, "the asset not found", pb.ResultStatus_NotExisted)
+		return nil
+	}
+	err := info.UpdateSmall(in.Operator, in.Flag)
+	if err != nil {
+		out.Status = outError(path, err.Error(), pb.ResultStatus_DBException)
+		return nil
+	}
+	out.Status = outLog(path, out)
+	return nil
+}
+
+
 
 

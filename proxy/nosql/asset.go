@@ -26,6 +26,8 @@ type Asset struct {
 	MD5      string `json:"md5" bson:"md5"`
 	Version  string `json:"version" bson:"version"`
 	Language string `json:"language" bson:"language"`
+	Snapshot string `json:"snapshot" bson:"snapshot"`
+	Small string `json:"small" bson:"small"`
 }
 
 func CreateAsset(info *Asset) error {
@@ -61,6 +63,26 @@ func GetAsset(uid string) (*Asset, error) {
 		return nil, err1
 	}
 	return model, nil
+}
+
+func UpdateAssetSnapshot(uid, snapshot,operator string) error {
+	if len(uid) < 2 {
+		return errors.New("db asset uid is empty of GetAsset")
+	}
+
+	msg := bson.M{"snapshot": snapshot,"operator": operator, "updatedAt": time.Now()}
+	_, err := updateOne(TableAssets, uid, msg)
+	return err
+}
+
+func UpdateAssetSmall(uid, small,operator string) error {
+	if len(uid) < 2 {
+		return errors.New("db asset uid is empty of GetAsset")
+	}
+
+	msg := bson.M{"small": small,"operator": operator, "updatedAt": time.Now()}
+	_, err := updateOne(TableAssets, uid, msg)
+	return err
 }
 
 func GetAssetsByOwner(owner string) ([]*Asset, error) {
