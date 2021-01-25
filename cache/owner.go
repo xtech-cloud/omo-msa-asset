@@ -69,6 +69,9 @@ func (mine *OwnerInfo)CreateAsset(info *AssetInfo) error {
 	db.Version = info.Version
 	db.Language = info.Language
 	db.Snapshot = info.Snapshot
+	db.Small = info.Small
+	db.Width = info.Width
+	db.Height = info.Height
 
 	err := nosql.CreateAsset(db)
 	if err == nil {
@@ -117,7 +120,7 @@ func (mine *OwnerInfo)deleteAsset(uid string) {
 }
 
 func (mine *OwnerInfo)RemoveAsset(uid, operator string) error {
-	err := nosql.RemoveAsset(uid, operator)
+	err := nosql.UpdateAssetOwner(uid, "", operator)
 	if err == nil {
 		mine.deleteAsset(uid)
 	}

@@ -9,7 +9,8 @@ import (
 type AssetInfo struct {
 	Type uint8
 	Size uint64
-
+	Width uint32
+	Height uint32
 	ID         uint64 `json:"-"`
 	UID        string `json:"uid"`
 	Name       string `json:"name"`
@@ -28,7 +29,6 @@ type AssetInfo struct {
 	Small string
 	CreateTime time.Time
 	UpdateTime time.Time
-	Thumbs []*ThumbInfo
 }
 
 func (mine *cacheContext)GetAsset(uid string) *AssetInfo {
@@ -80,18 +80,24 @@ func (mine *AssetInfo)initInfo(db *nosql.Asset)  {
 	mine.Format = db.Format
 	mine.Language = db.Language
 	mine.Snapshot = db.Snapshot
+	mine.Small = db.Small
 
-	list,err := nosql.GetThumbsByAsset(mine.UID)
-	if err == nil {
-		mine.Thumbs = make([]*ThumbInfo, 0, len(list)+5)
-		for _, thumb := range list {
-			info := new(ThumbInfo)
-			info.initInfo(thumb)
-			mine.Thumbs = append(mine.Thumbs, info)
-		}
-	}else{
-		mine.Thumbs = make([]*ThumbInfo, 0, 10)
+	mine.Width = db.Width
+	mine.Height = db.Height
+}
+
+func (mine *AssetInfo)GetThumbs() ([]*ThumbInfo,error) {
+	array,err := nosql.GetThumbsByAsset(mine.UID)
+	if err != nil {
+		return nil,err
 	}
+	list := make([]*ThumbInfo, 0, len(array))
+	for _, thumb := range array {
+		tmp := new(ThumbInfo)
+		tmp.initInfo(thumb)
+		list = append(list, tmp)
+	}
+	return list,nil
 }
 
 func (mine *AssetInfo)Remove(operator string) error {
@@ -115,76 +121,70 @@ func (mine *AssetInfo)UpdateSmall(operator, small string) error {
 }
 
 func (mine *AssetInfo)HadThumbByFace(face string) bool {
-	for _, thumb := range mine.Thumbs {
-		if thumb.Face == face {
-			return true
-		}
+	info := mine.GetThumbByFace(face)
+	if info == nil {
+		return false
 	}
-	return false
+	return true
 }
 
 func (mine *AssetInfo)GetThumbByFace(face string) *ThumbInfo {
-	for _, thumb := range mine.Thumbs {
-		if thumb.Face == face {
-			return thumb
-		}
+	db,err := nosql.GetThumbByFace(mine.UID, face)
+	if err != nil {
+		return nil
 	}
-	return nil
+	tmp := new(ThumbInfo)
+	tmp.initInfo(db)
+	return tmp
 }
 
 func (mine *AssetInfo)GetThumb(uid string) *ThumbInfo {
-	for _, thumb := range mine.Thumbs {
-		if thumb.UID == uid {
-			return thumb
-		}
+	db,err := nosql.GetThumb(uid)
+	if err != nil {
+		return nil
 	}
-	return nil
+	tmp := new(ThumbInfo)
+	tmp.initInfo(db)
+	return tmp
 }
 
 func (mine *AssetInfo)hadThumb(uid string) bool {
-	for _, thumb := range mine.Thumbs {
-		if thumb.UID == uid {
-			return true
-		}
+	info := mine.GetThumb(uid)
+	if info == nil {
+		return false
 	}
-	return false
+	return true
 }
 
 func (mine *AssetInfo)RemoveThumb(uid, operator string) error {
 	if !mine.hadThumb(uid) {
 		return nil
 	}
-	err := nosql.RemoveThumb(uid, operator)
-	if err == nil {
-		for i := 0;i < len(mine.Thumbs);i += 1 {
-			if mine.Thumbs[i].UID == uid {
-				mine.Thumbs = append(mine.Thumbs[:i], mine.Thumbs[i+1:]...)
-				break
-			}
-		}
-	}
-	return err
+	return nosql.RemoveThumb(uid, operator)
 }
 
-func (mine *AssetInfo)CreateThumb(face, url, operator string) (*ThumbInfo,error) {
+func (mine *AssetInfo)CreateThumb(face, url, operator, owner string, score,similar,blur float32) (*ThumbInfo,error) {
 	t := mine.GetThumbByFace(face)
 	if t != nil {
 		return t, nil
 	}
 	db := new(nosql.Thumb)
 	db.UID = primitive.NewObjectID()
-	db.ID = nosql.GetAssetNextID()
+	db.ID = nosql.GetThumbNextID()
 	db.CreatedTime = time.Now()
 	db.Creator = operator
 	db.Operator = operator
 	db.FaceID = face
 	db.URL = url
 	db.Asset = mine.UID
+	db.Blur = blur
+	db.Owner = owner
+	db.Probably = score
+	db.Similar = similar
 	err := nosql.CreateThumb(db)
 	if err == nil {
 		info := new(ThumbInfo)
 		info.initInfo(db)
-		mine.Thumbs = append(mine.Thumbs, info)
 		return info, nil
 	}
 	return nil, err

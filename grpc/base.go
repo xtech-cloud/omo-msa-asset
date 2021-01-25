@@ -22,9 +22,9 @@ func inLog(name, data interface{})  {
 }
 
 func outLog(name, data interface{}) *pb.ReplyStatus {
-	//bytes, _ := json.Marshal(data)
-	//msg := byteString(bytes)
-	//logger.Infof("[out.%s]:data = %s", name, msg)
+	bytes, _ := json.Marshal(data)
+	msg := byteString(bytes)
+	logger.Infof("[out.%s]:data = %s", name, msg)
 	tmp := &pb.ReplyStatus{
 		Code: 0,
 		Error: "",

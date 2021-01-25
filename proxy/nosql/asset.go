@@ -28,6 +28,8 @@ type Asset struct {
 	Language string `json:"language" bson:"language"`
 	Snapshot string `json:"snapshot" bson:"snapshot"`
 	Small string `json:"small" bson:"small"`
+	Width uint32 `json:"width" bson:"width"`
+	Height uint32 `json:"height" bson:"height"`
 }
 
 func CreateAsset(info *Asset) error {
@@ -46,6 +48,11 @@ func RemoveAsset(uid, operator string) error {
 	}
 	_, err := removeOne(TableAssets, uid, operator)
 	return err
+}
+
+func GetAssetCount() int64 {
+	num, _ := getCount(TableAssets)
+	return num
 }
 
 func GetAsset(uid string) (*Asset, error) {
@@ -81,6 +88,16 @@ func UpdateAssetSmall(uid, small,operator string) error {
 	}
 
 	msg := bson.M{"small": small,"operator": operator, "updatedAt": time.Now()}
+	_, err := updateOne(TableAssets, uid, msg)
+	return err
+}
+
+func UpdateAssetOwner(uid, owner, operator string) error {
+	if len(uid) < 2 {
+		return errors.New("db asset uid is empty of GetAsset")
+	}
+
+	msg := bson.M{"owner": owner,"operator": operator, "updatedAt": time.Now()}
 	_, err := updateOne(TableAssets, uid, msg)
 	return err
 }

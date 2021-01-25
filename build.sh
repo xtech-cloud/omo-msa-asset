@@ -1,3 +1,6 @@
+export GO111MODULE=on
+export GOSUMDB=off
+export GOPROXY=https://mirrors.aliyun.com/goproxy/
 go install omo.msa.asset
 mkdir _build
 mkdir _build/bin

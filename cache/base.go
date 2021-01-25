@@ -1,6 +1,7 @@
 package cache
 
 import (
+	"github.com/micro/go-micro/v2/logger"
 	"omo.msa.asset/config"
 	"omo.msa.asset/proxy/nosql"
 )
@@ -16,6 +17,11 @@ func InitData() error {
 	cacheCtx.owners = make([]*OwnerInfo, 0, 100)
 
 	err := nosql.InitDB(config.Schema.Database.IP, config.Schema.Database.Port, config.Schema.Database.Name, config.Schema.Database.Type)
+	if err == nil {
+		num := nosql.GetAssetCount()
+		count := nosql.GetThumbCount()
+		logger.Infof("the asset count = %d and the thumb count = %d", num, count)
+	}
 	return err
 }
 
@@ -26,10 +32,9 @@ func Context() *cacheContext {
 func (mine *cacheContext)GetThumb(uid string) *ThumbInfo {
 	for _, owner := range mine.owners {
 		for _, asset := range owner.assets {
-			for _, thumb := range asset.Thumbs {
-				if thumb.UID == uid {
-					return thumb
-				}
+			thumb := asset.GetThumb(uid)
+			if thumb != nil {
+				return thumb
 			}
 		}
 	}

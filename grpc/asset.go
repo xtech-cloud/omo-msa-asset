@@ -27,11 +27,18 @@ func switchAsset(owner string, info *cache.AssetInfo) *pb.AssetInfo {
 	tmp.Format = info.Format
 	tmp.Md5 = info.MD5
 	tmp.Version = info.Version
-	tmp.Language = info.Language
-	tmp.Thumbs = make([]*pb.ThumbBrief, 0, len(info.Thumbs))
-	for _, thumb := range info.Thumbs {
-		tmp.Thumbs = append(tmp.Thumbs, switchThumbBrief(thumb))
+	tmp.Snapshot = info.Snapshot
+	tmp.Small = info.Small
+	tmp.Width = info.Width
+	tmp.Height = info.Height
+	thumbs,er := info.GetThumbs()
+	if er == nil {
+		tmp.Thumbs = make([]*pb.ThumbBrief, 0, len(thumbs))
+		for _, thumb := range thumbs {
+			tmp.Thumbs = append(tmp.Thumbs, switchThumbBrief(thumb))
+		}
 	}
+
 	return tmp
 }
 
@@ -40,13 +47,16 @@ func switchThumbBrief(info *cache.ThumbInfo) *pb.ThumbBrief {
 	tmp.Uid = info.UID
 	tmp.Owner = info.Owner
 	tmp.Face = info.Face
+	tmp.Blur = info.Blur
 	tmp.Url = info.URL
+	tmp.Similar = info.Similar
 	tmp.Probably = info.Probably
 	return tmp
 }
 
 func (mine *AssetService)AddOne(ctx context.Context, in *pb.ReqAssetAdd, out *pb.ReplyAssetOne) error {
 	path := "asset.addOne"
+	inLog(path, in)
 	if len(in.Owner) < 1 {
 		out.Status = outError(path, "the owner is empty", pb.ResultStatus_Empty)
 		return nil
@@ -63,6 +73,10 @@ func (mine *AssetService)AddOne(ctx context.Context, in *pb.ReqAssetAdd, out *pb
 	info.Size = in.Size
 	info.Language = in.Language
 	info.Creator = in.Operator
+	info.Small = in.Small
+	info.Snapshot = in.Snapshot
+	info.Width = in.Width
+	info.Height = in.Height
 	err := owner.CreateAsset(info)
 	if err != nil {
 		out.Status = outError(path, err.Error(), pb.ResultStatus_DBException)
@@ -75,6 +89,7 @@ func (mine *AssetService)AddOne(ctx context.Context, in *pb.ReqAssetAdd, out *pb
 
 func (mine *AssetService)GetOne(ctx context.Context, in *pb.RequestInfo, out *pb.ReplyAssetOne) error {
 	path := "asset.getOne"
+	inLog(path, in)
 	if len(in.Uid) < 1 {
 		out.Status = outError(path, "the asset is empty", pb.ResultStatus_Empty)
 		return nil
@@ -101,6 +116,7 @@ func (mine *AssetService)GetOne(ctx context.Context, in *pb.RequestInfo, out *pb
 
 func (mine *AssetService)RemoveOne(ctx context.Context, in *pb.RequestInfo, out *pb.ReplyInfo) error {
 	path := "asset.removeOne"
+	inLog(path, in)
 	if len(in.Uid) < 1 {
 		out.Status = outError(path, "the asset is empty", pb.ResultStatus_Empty)
 		return nil
@@ -122,6 +138,7 @@ func (mine *AssetService)RemoveOne(ctx context.Context, in *pb.RequestInfo, out 
 
 func (mine *AssetService)GetList(ctx context.Context, in *pb.ReqAssetList, out *pb.ReplyAssetList) error {
 	path := "asset.getList"
+	inLog(path, in)
 	out.List = make([]*pb.AssetInfo, 0, len(in.List))
 	for _, val := range in.List {
 		info := cache.Context().GetAsset(val)
@@ -135,6 +152,7 @@ func (mine *AssetService)GetList(ctx context.Context, in *pb.ReqAssetList, out *
 
 func (mine *AssetService)GetByOwner(ctx context.Context, in *pb.RequestInfo, out *pb.ReplyAssetList) error {
 	path := "asset.getByOwner"
+	inLog(path, in)
 	if len(in.Owner) < 1 {
 		out.Status = outError(path, "the owner is empty", pb.ResultStatus_Empty)
 		return nil
@@ -155,6 +173,7 @@ func (mine *AssetService)GetByOwner(ctx context.Context, in *pb.RequestInfo, out
 
 func (mine *AssetService)UpdateSnapshot(ctx context.Context, in *pb.ReqAssetFlag, out *pb.ReplyInfo) error {
 	path := "asset.updateSnapshot"
+	inLog(path, in)
 	if len(in.Uid) < 1 {
 		out.Status = outError(path, "the uid is empty", pb.ResultStatus_Empty)
 		return nil
@@ -175,6 +194,7 @@ func (mine *AssetService)UpdateSnapshot(ctx context.Context, in *pb.ReqAssetFlag
 
 func (mine *AssetService)UpdateSmall(ctx context.Context, in *pb.ReqAssetFlag, out *pb.ReplyInfo) error {
 	path := "asset.updateSmall"
+	inLog(path, in)
 	if len(in.Uid) < 1 {
 		out.Status = outError(path, "the uid is empty", pb.ResultStatus_Empty)
 		return nil

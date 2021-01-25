@@ -8,6 +8,8 @@ import (
 type ThumbInfo struct {
 	ID       uint64 `json:"-"`
 	Probably float32
+	Similar float32
+	Blur float32
 	UID      string `json:"uid"`
 	Creator  string
 	Operator string
@@ -28,17 +30,19 @@ func (mine *ThumbInfo) initInfo(db *nosql.Thumb) {
 	mine.Owner = db.Owner
 	mine.Asset = db.Asset
 	mine.Probably = db.Probably
+	mine.Similar = db.Similar
+	mine.Blur = db.Blur
 	mine.Face = db.FaceID
 	mine.URL = db.URL
 	mine.Creator = db.Creator
 	mine.Operator = db.Operator
 }
 
-func (mine *ThumbInfo)UpdateBase(owner string, probably float32) error {
-	err := nosql.UpdateThumbBase(mine.UID, owner, probably)
+func (mine *ThumbInfo)UpdateBase(owner string, similar float32) error {
+	err := nosql.UpdateThumbBase(mine.UID, owner, similar)
 	if err == nil {
 		mine.Owner = owner
-		mine.Probably = probably
+		mine.Similar = similar
 	}
 	return err
 }
