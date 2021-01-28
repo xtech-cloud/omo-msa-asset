@@ -39,9 +39,6 @@ func main() {
 
 	app, _ := filepath.Abs(os.Args[0])
 
-	BuildVersion := "1.1.1"
-	BuildTime := time.Now().String()
-	CommitID := "1"
 	logger.Info("-------------------------------------------------------------")
 	logger.Info("- Micro Service Agent -> Run")
 	logger.Info("-------------------------------------------------------------")

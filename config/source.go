@@ -2,7 +2,11 @@ package config
 
 import (
 	"encoding/json"
-	"fmt"
+	"github.com/micro/go-micro/v2/config/source/memory"
+	logrusPlugin "github.com/micro/go-plugins/logger/logrus/v2"
+	"github.com/sirupsen/logrus"
+	"gopkg.in/natefinch/lumberjack.v2"
+	"io"
 	"os"
 	"time"
 
@@ -11,12 +15,8 @@ import (
 	"github.com/micro/go-micro/v2/config/source"
 	"github.com/micro/go-micro/v2/config/source/etcd"
 	"github.com/micro/go-micro/v2/config/source/file"
-	"github.com/micro/go-micro/v2/config/source/memory"
 	"github.com/micro/go-micro/v2/logger"
 	"github.com/micro/go-plugins/config/source/consul/v2"
-	logrusPlugin "github.com/micro/go-plugins/logger/logrus/v2"
-	"github.com/sirupsen/logrus"
-	goYAML "gopkg.in/yaml.v2"
 )
 
 type Define struct {
@@ -125,41 +125,16 @@ func Setup() {
 	if "" == mode {
 		mode = "debug"
 	}
-
-	// initialize logger
-	if "debug" == mode {
-		logger.DefaultLogger = logrusPlugin.NewLogger(
-			logger.WithOutput(os.Stdout),
-			logger.WithLevel(logger.TraceLevel),
-			logrusPlugin.WithTextTextFormatter(new(logrus.TextFormatter)),
-		)
-		logger.Info("-------------------------------------------------------------")
-		logger.Info("- Micro Service Agent -> Setup")
-		logger.Info("-------------------------------------------------------------")
-		logger.Warn("Running in \"debug\" mode. Switch to \"release\" mode in production.")
-		logger.Warn("- using env:	export MSA_MODE=release")
-	} else {
-		logger.DefaultLogger = logrusPlugin.NewLogger(
-			logger.WithOutput(os.Stdout),
-			logger.WithLevel(logger.TraceLevel),
-			logrusPlugin.WithJSONFormatter(new(logrus.JSONFormatter)),
-		)
-		logger.Info("-------------------------------------------------------------")
-		logger.Info("- Micro Service Agent -> Setup")
-		logger.Info("-------------------------------------------------------------")
-	}
-
+	setupEnvironment()
 	conf, err := config.NewConfig()
 	if nil != err {
 		panic(err)
 	}
 
-	setupEnvironment()
-
 	// load default config
-	logger.Tracef("default config is: \n\r%v", defaultYAML)
+	logger.Infof("default config is: \n\r%v", defaultJson)
 	memorySource := memory.NewSource(
-		memory.WithYAML([]byte(defaultYAML)),
+		memory.WithJSON([]byte(defaultJson)),
 	)
 	conf.Load(memorySource)
 	err1 := conf.Scan(&Schema)
@@ -167,7 +142,6 @@ func Setup() {
 		panic(err1)
 		return
 	}
-	fmt.Println(Schema)
 
 	// merge others
 	if "file" == configDefine.Source {
@@ -180,12 +154,66 @@ func Setup() {
 		mergeEtcd(conf)
 	}
 
-	ycd, err := goYAML.Marshal(&Schema)
+	ycd, err := json.Marshal(&Schema)
 	if nil != err {
 		logger.Error(err)
 	} else {
-		logger.Tracef("current config is: \n\r%v", string(ycd))
+		logger.Infof("current config is: \n\r%v", string(ycd))
 	}
+
+	// initialize logger
+	initLogger(mode)
+}
+
+func getLoggerOut() io.Writer {
+	path := Schema.Logger.File
+	logger.Info("logger path = " + path)
+	log :=&lumberjack.Logger{
+		LocalTime:  true,
+		Filename:   path,
+		MaxSize:    20, // megabytes
+		MaxBackups: 20,
+		MaxAge:     0,    //days
+		Compress:   false, // disabled by default
+	}
+	if Schema.Logger.Std {
+		writers := []io.Writer{
+			log,
+			os.Stdout,
+		}
+		return io.MultiWriter(writers...)
+	}else{
+		writers := []io.Writer{
+			log,
+		}
+		return io.MultiWriter(writers...)
+	}
+}
+
+func initLogger(mode string)  {
+	out := getLoggerOut()
+	if "debug" == mode {
+		logger.DefaultLogger = logrusPlugin.NewLogger(
+			logger.WithOutput(out),
+			logger.WithLevel(logger.TraceLevel),
+			logrusPlugin.WithTextTextFormatter(new(logrus.TextFormatter)),
+		)
+		logger.Info("-------------------------------------------------------------")
+		logger.Info("- Micro Service Agent -> Setup")
+		logger.Info("-------------------------------------------------------------")
+		logger.Warn("Running in \"debug\" mode. Switch to \"release\" mode in production.")
+		logger.Warn("- using env:	export MSA_MODE=release")
+	} else {
+		logger.DefaultLogger = logrusPlugin.NewLogger(
+			logger.WithOutput(out),
+			logger.WithLevel(logger.TraceLevel),
+			logrusPlugin.WithJSONFormatter(new(logrus.JSONFormatter)),
+		)
+		logger.Info("-------------------------------------------------------------")
+		logger.Info("- Micro Service Agent -> Setup")
+		logger.Info("-------------------------------------------------------------")
+	}
+
 
 	level, err := logger.GetLevel(Schema.Logger.Level)
 	if nil != err {
@@ -206,5 +234,4 @@ func Setup() {
 	logger.Init(
 		logger.WithLevel(level),
 	)
-
 }

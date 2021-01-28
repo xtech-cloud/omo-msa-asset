@@ -1,23 +1,24 @@
 package config
 
 type ServiceConfig struct {
-	TTL      int64  `yaml:"ttl"`
-	Interval int64  `yaml:"interval"`
-	Address  string `yaml:"address"`
+	TTL      int64  `json:"ttl"`
+	Interval int64  `json:"interval"`
+	Address  string `json:"address"`
 }
 
 type LoggerConfig struct {
-	Level string `yaml:"level"`
-	Dir string `yaml:"dir"`
+	Level string `json:"level"`
+	File string `json:"file"`
+	Std bool `json:"std"`
 }
 
 type DBConfig struct {
-	Type     string	`yaml:"type"`
-	User     string	`yaml:"user"`
-	Password string	`yaml:"password"`
-	IP      string	`yaml:"ip"`
-	Port     string	`yaml:"port"`
-	Name     string	`yaml:"name"`
+	Type     string	`json:"type"`
+	User     string	`json:"user"`
+	Password string	`json:"password"`
+	IP      string	`json:"ip"`
+	Port     string	`json:"port"`
+	Name     string	`json:"name"`
 }
 
 type BasicConfig struct {
@@ -26,8 +27,8 @@ type BasicConfig struct {
 }
 
 type SchemaConfig struct {
-	Service  ServiceConfig `yaml:"service"`
-	Logger   LoggerConfig  `yaml:"logger"`
-	Database DBConfig      `yaml:"database"`
-	Basic   BasicConfig `yaml:"basic"`
+	Service  ServiceConfig `json:"service"`
+	Logger   LoggerConfig  `json:"logger"`
+	Database DBConfig      `json:"database"`
+	Basic   BasicConfig `json:"basic"`
 }
