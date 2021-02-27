@@ -26,9 +26,30 @@ type BasicConfig struct {
 	TagMax    int `ini:"tag"`
 }
 
+type StorageConfig struct {
+	Type string `json:"type"`
+	/**
+	最大尺寸大小
+	*/
+	Limit int32 `json:"limit"`
+	/**
+	token最大时效（秒）
+	*/
+	Expire int32  `json:"expire"`
+	Domain string `json:"domain"`
+	// 公有库或者私有库
+	ACM int `json:"acm"`
+	// 私有地址的有效时间（秒）
+	Period    int64  `json:"period"`
+	Bucket    string `json:"bucket"`
+	AccessKey string `json:"access"`
+	SecretKey string `json:"secret"`
+}
+
 type SchemaConfig struct {
 	Service  ServiceConfig `json:"service"`
 	Logger   LoggerConfig  `json:"logger"`
 	Database DBConfig      `json:"database"`
 	Basic   BasicConfig `json:"basic"`
+	Storage   StorageConfig `json:"storage"`
 }

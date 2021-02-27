@@ -17,6 +17,12 @@ import (
 	"time"
 )
 
+var (
+	BuildVersion string
+	BuildTime    string
+	CommitID     string
+)
+
 func main() {
 	config.Setup()
 	err := cache.InitData()

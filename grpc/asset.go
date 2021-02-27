@@ -5,6 +5,7 @@ import (
 	"fmt"
 	pb "github.com/xtech-cloud/omo-msp-asset/proto/asset"
 	"omo.msa.asset/cache"
+	"omo.msa.asset/config"
 )
 
 type AssetService struct {}
@@ -23,12 +24,12 @@ func switchAsset(owner string, info *cache.AssetInfo) *pb.AssetInfo {
 	tmp.Owner = info.Owner
 	tmp.Type = pb.OwnerType(info.Type)
 	tmp.Size = info.Size
-	tmp.Uuid = info.UUID
+	tmp.Uuid = info.URL()
 	tmp.Format = info.Format
 	tmp.Md5 = info.MD5
 	tmp.Version = info.Version
-	tmp.Snapshot = info.Snapshot
-	tmp.Small = info.Small
+	tmp.Snapshot = info.SnapshotURL()
+	tmp.Small = info.SmallImageURL()
 	tmp.Width = info.Width
 	tmp.Height = info.Height
 	thumbs,er := info.GetThumbs()
@@ -168,6 +169,18 @@ func (mine *AssetService)GetByOwner(ctx context.Context, in *pb.RequestInfo, out
 		out.List = append(out.List, switchAsset(in.Owner, val))
 	}
 	out.Status = outLog(path, fmt.Sprintf("the length = %d", len(out.List)))
+	return nil
+}
+
+func (mine *AssetService)GetToken(ctx context.Context, in *pb.RequestInfo, out *pb.ReplyAssetToken) error {
+	path := "asset.getToken"
+	inLog(path, in)
+	out.Expire = uint32(config.Schema.Storage.Expire)
+	out.Domain = config.Schema.Storage.Domain
+	out.Bucket = config.Schema.Storage.Bucket
+	out.Limit = uint32(config.Schema.Storage.Limit)
+	out.Token = cache.Context().GetUpToken()
+	out.Status = outLog(path, out)
 	return nil
 }
 

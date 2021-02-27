@@ -1,7 +1,13 @@
 package cache
 
 import (
+	"errors"
 	"github.com/micro/go-micro/v2/logger"
+	"github.com/qiniu/api.v7/v7/auth"
+	"github.com/qiniu/api.v7/v7/auth/qbox"
+	"github.com/qiniu/api.v7/v7/cdn"
+	"github.com/qiniu/api.v7/v7/storage"
+	"go.uber.org/zap"
 	"omo.msa.asset/config"
 	"omo.msa.asset/proxy/nosql"
 )
@@ -55,4 +61,73 @@ func (mine *cacheContext) GetThumbsByOwner(uid string) []*ThumbInfo {
 		list := make([]*ThumbInfo, 0, 1)
 		return list
 	}
+}
+
+
+func (mine *cacheContext)GetUpToken() string {
+	cof := config.Schema.Storage
+	mac := auth.New(cof.AccessKey, cof.SecretKey)
+	// 设置上传凭证有效期
+	putPolicy := storage.PutPolicy{
+		Scope:      config.Schema.Storage.Bucket,
+		ReturnBody: `{"key":"$(key)","hash":"$(etag)","size":$(fsize),"type":"$(mimeType)", 
+		"img":$(imageInfo), "uuid":"$(uuid)", "bucket":"$(bucket)","name":"$(fname)"}`,
+	}
+	putPolicy.Expires = uint64(config.Schema.Storage.Expire) //有效期
+
+	return putPolicy.UploadToken(mac)
+}
+
+
+func RefreshCDN(url string) bool {
+	mac := qbox.NewMac(config.Schema.Storage.AccessKey, config.Schema.Storage.SecretKey)
+	cdnManager := cdn.NewCdnManager(mac)
+
+	urlsToRefresh := []string{
+		url,
+	}
+	_, err := cdnManager.RefreshUrls(urlsToRefresh)
+	if err != nil {
+		logger.Warn("cache: refresh cdn failed from qiniu cache!!!", zap.String("url", url))
+		return false
+	}
+	return true
+}
+
+func DeleteContentFromCloud(key string) error {
+	if len(key) < 1 {
+		return errors.New("cache: the key is empty")
+	}
+	mac := qbox.NewMac(config.Schema.Storage.AccessKey, config.Schema.Storage.SecretKey)
+	cfg := storage.Config{
+		// 是否使用https域名进行资源管理
+		UseHTTPS: false,
+	}
+	// 指定空间所在的区域，如果不指定将自动探测
+	// 如果没有特殊需求，默认不需要指定
+	//cfg.Zone=&storage.ZoneHuabei
+	bucketManager := storage.NewBucketManager(mac, &cfg)
+	err := bucketManager.Delete(config.Schema.Storage.Bucket, key)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func GetContentFromCloud(key string) *storage.FileInfo {
+	mac := qbox.NewMac(config.Schema.Storage.AccessKey, config.Schema.Storage.SecretKey)
+	cfg := storage.Config{
+		// 是否使用https域名进行资源管理
+		UseHTTPS: false,
+	}
+	// 指定空间所在的区域，如果不指定将自动探测
+	// 如果没有特殊需求，默认不需要指定
+	//cfg.Zone=&storage.ZoneHuabei
+	bucketManager := storage.NewBucketManager(mac, &cfg)
+	fileInfo, err := bucketManager.Stat(config.Schema.Storage.Bucket, key)
+	if err == nil {
+		return &fileInfo
+	}
+	logger.Warn("cache: check file info failed from qiniu cache!!!", zap.String("key", key))
+	return nil
 }

@@ -1,10 +1,16 @@
 package cache
 
 import (
+	"github.com/qiniu/api.v7/v7/auth/qbox"
+	"github.com/qiniu/api.v7/v7/storage"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"omo.msa.asset/config"
 	"omo.msa.asset/proxy/nosql"
+	"strings"
 	"time"
 )
+
+const UP_QINIU = "qiniu"
 
 type AssetInfo struct {
 	Type uint8
@@ -118,6 +124,37 @@ func (mine *AssetInfo)UpdateSmall(operator, small string) error {
 		mine.Small = operator
 	}
 	return err
+}
+
+func (mine *AssetInfo)getURL(key string) string {
+	if len(key) < 2 {
+		return ""
+	}
+	if strings.Contains(key, "http") {
+		return key
+	}
+	if config.Schema.Storage.Type == UP_QINIU {
+		if config.Schema.Storage.ACM > 0 {
+			mac := qbox.NewMac(config.Schema.Storage.AccessKey, config.Schema.Storage.SecretKey)
+			return storage.MakePrivateURL(mac, config.Schema.Storage.Domain, key, config.Schema.Storage.Period)
+		}else{
+			return storage.MakePublicURL(config.Schema.Storage.Domain, key)
+		}
+	} else {
+		return mine.UID
+	}
+}
+
+func (mine *AssetInfo) URL() string {
+	return mine.getURL(mine.UUID)
+}
+
+func (mine *AssetInfo) SnapshotURL() string {
+	return mine.getURL(mine.Snapshot)
+}
+
+func (mine *AssetInfo) SmallImageURL() string {
+	return mine.getURL(mine.Small)
 }
 
 func (mine *AssetInfo)HadThumbByFace(face string) bool {
