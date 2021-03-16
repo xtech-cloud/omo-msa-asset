@@ -27,9 +27,18 @@ tester:
 
 .PHONY: dist
 dist:
-	mkdir dist
+	mkdir -p dist
+	rm -f dist/${APP_NAME}-${BUILD_VERSION}.tar.gz
 	tar -zcf dist/${APP_NAME}-${BUILD_VERSION}.tar.gz ./bin/${APP_NAME}
 
 .PHONY: docker
 docker:
 	docker build . -t omo.msa.asset:latest
+
+.PHONY: updev
+updev:
+	scp -P 2209 dist/${APP_NAME}-${BUILD_VERSION}.tar.gz root@172.16.10.52:/root/
+
+.PHONY: upload
+upload:
+	scp -P 9099 dist/${APP_NAME}-${BUILD_VERSION}.tar.gz root@47.93.209.105:/root/

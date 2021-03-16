@@ -46,9 +46,12 @@ func getCount(collection string) (int64, error) {
 	return result, nil
 }
 
-func deleteOne(collection string, uid string) (int64, error) {
+func deleteOne(collection, uid string) (int64, error) {
 	if len(collection) < 1 {
 		return 0,	errors.New("the collection is empty")
+	}
+	if len(uid) < 2 {
+		return 0,errors.New("the uid is empty of " + collection)
 	}
 	objID, e := primitive.ObjectIDFromHex(uid)
 	if e != nil {
@@ -68,9 +71,12 @@ func deleteOne(collection string, uid string) (int64, error) {
 	return result.DeletedCount, nil
 }
 
-func removeOne(collection string, uid, operator string) (int64, error) {
+func removeOne(collection, uid, operator string) (int64, error) {
 	if len(collection) < 1 {
 		return 0,	errors.New("the collection is empty")
+	}
+	if len(uid) < 2 {
+		return 0,errors.New("the uid is empty of " + collection)
 	}
 	objID, e := primitive.ObjectIDFromHex(uid)
 	if e != nil {
@@ -108,9 +114,12 @@ func hadOne(collection string, filter bson.M) (bool, error) {
 	return true, nil
 }
 
-func updateOne(collection string, uid string, data bson.M) (int64, error) {
+func updateOne(collection, uid string, data bson.M) (int64, error) {
 	if len(collection) < 1 {
 		return 0,	errors.New("the collection is empty")
+	}
+	if len(uid) < 2 {
+		return 0,errors.New("the uid is empty of " + collection)
 	}
 	objID, e := primitive.ObjectIDFromHex(uid)
 	if e != nil {
@@ -134,9 +143,12 @@ func updateOne(collection string, uid string, data bson.M) (int64, error) {
 /**
 往数组里面追加一个元素
 */
-func appendElement(collection string, uid string, data bson.M) (int64, error) {
+func appendElement(collection, uid string, data bson.M) (int64, error) {
 	if len(collection) < 1 {
 		return 0,	errors.New("the collection is empty")
+	}
+	if len(uid) < 2 {
+		return 0,errors.New("the uid is empty of " + collection)
 	}
 	objID, e := primitive.ObjectIDFromHex(uid)
 	if e != nil {
@@ -160,9 +172,12 @@ func appendElement(collection string, uid string, data bson.M) (int64, error) {
 /**
 从数组里面移除一个元素
 */
-func removeElement(collection string, uid string, data bson.M) (int64, error) {
+func removeElement(collection, uid string, data bson.M) (int64, error) {
 	if len(collection) < 1 {
 		return 0,	errors.New("the collection is empty")
+	}
+	if len(uid) < 2 {
+		return 0,errors.New("the uid is empty of " + collection)
 	}
 	objID, e := primitive.ObjectIDFromHex(uid)
 	if e != nil {
@@ -200,9 +215,12 @@ func updateOneBy(collection string, filter bson.M, update bson.M) (int64, error)
 	return result.ModifiedCount, nil
 }
 
-func findOne(collection string, uid string) (*mongo.SingleResult, error) {
-	if len(collection) < 1 {
+func findOne(collection, uid string) (*mongo.SingleResult, error) {
+	if len(collection) < 2 {
 		return nil,	errors.New("the collection is empty")
+	}
+	if len(uid) < 2 {
+		return nil,errors.New("the uid is empty of " + collection)
 	}
 	objID, e := primitive.ObjectIDFromHex(uid)
 	if e != nil {
@@ -223,7 +241,7 @@ func findOne(collection string, uid string) (*mongo.SingleResult, error) {
 }
 
 func findOneBy(collection string, filter bson.M) (*mongo.SingleResult, error) {
-	if len(collection) < 1 {
+	if len(collection) < 2 {
 		return nil,	errors.New("the collection is empty")
 	}
 	c := noSql.Collection(collection)
@@ -239,9 +257,12 @@ func findOneBy(collection string, filter bson.M) (*mongo.SingleResult, error) {
 	return result, nil
 }
 
-func findOneOfField(collection string, uid string, selector bson.M) (*mongo.SingleResult, error) {
-	if len(collection) < 1 {
+func findOneOfField(collection, uid string, selector bson.M) (*mongo.SingleResult, error) {
+	if len(collection) < 2 {
 		return nil,	errors.New("the collection is empty")
+	}
+	if len(uid) < 2 {
+		return nil,errors.New("the uid is empty of " + collection)
 	}
 	objID, e := primitive.ObjectIDFromHex(uid)
 	if e != nil {
@@ -262,8 +283,8 @@ func findOneOfField(collection string, uid string, selector bson.M) (*mongo.Sing
 }
 
 func findOneByOpt(collection string, filter bson.M, selector bson.M) (*mongo.SingleResult, error) {
-	if len(collection) < 1 {
-		return nil,	errors.New("the collection is empty")
+	if len(collection) < 2 {
+		return nil,	errors.New("the uid is empty of " + collection)
 	}
 	c := noSql.Collection(collection)
 	if c == nil {
@@ -291,7 +312,7 @@ func findMany(collection string, filter bson.M, limit int64) (*mongo.Cursor, err
 	var cursor *mongo.Cursor
 	var err error
 	if limit > 0 {
-		cursor, err = c.Find(ctx, filter, options.Find().SetLimit(limit))
+		cursor, err = c.Find(ctx, filter, options.Find().SetSort(bson.M{"createdAt": -1}).SetLimit(limit))
 	} else {
 		cursor, err = c.Find(ctx, filter)
 	}
@@ -299,6 +320,19 @@ func findMany(collection string, filter bson.M, limit int64) (*mongo.Cursor, err
 		return nil, err
 	}
 	return cursor, nil
+}
+
+func getCountByFilter(collection string, filter bson.M) (int64, error) {
+	if len(collection) < 1 {
+		return -1,	errors.New("the collection is empty")
+	}
+	c := noSql.Collection(collection)
+	if c == nil {
+		return -1, errors.New("can not found the collection of" + collection)
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), timeOut)
+	defer cancel()
+	return c.CountDocuments(ctx, filter)
 }
 
 func findManyByOpts(collection string, filter bson.M, opts *options.FindOptions) (*mongo.Cursor, error) {
@@ -352,7 +386,7 @@ func findAll(collection string, limit int64) (*mongo.Cursor, error) {
 	var cursor *mongo.Cursor
 	var err error
 	if limit > 0 {
-		cursor, err = c.Find(ctx, filter, options.Find().SetLimit(limit))
+		cursor, err = c.Find(ctx, filter, options.Find().SetSort(bson.M{"createdAt":-1}).SetLimit(limit))
 	} else {
 		cursor, err = c.Find(ctx, filter)
 	}
