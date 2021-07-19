@@ -20,6 +20,7 @@ type AssetInfo struct {
 	ID         uint64 `json:"-"`
 	UID        string `json:"uid"`
 	Name       string `json:"name"`
+	Remark    string
 	Creator string
 	Operator string
 
@@ -76,6 +77,7 @@ func (mine *AssetInfo)initInfo(db *nosql.Asset)  {
 	mine.Creator = db.Creator
 	mine.Operator = db.Operator
 	mine.Name = db.Name
+	mine.Remark = db.Remark
 
 	mine.Size = db.Size
 	mine.UUID = db.UUID
@@ -121,7 +123,17 @@ func (mine *AssetInfo)UpdateSnapshot(operator, snapshot string) error {
 func (mine *AssetInfo)UpdateSmall(operator, small string) error {
 	err := nosql.UpdateAssetSmall(mine.UID, small, operator)
 	if err == nil {
-		mine.Small = operator
+		mine.Small = small
+		mine.Operator = operator
+	}
+	return err
+}
+
+func (mine *AssetInfo)UpdateBase(operator, name, remark string) error {
+	err := nosql.UpdateAssetBase(mine.UID, name, remark, operator)
+	if err == nil {
+		mine.Name = name
+		mine.Remark = remark
 	}
 	return err
 }

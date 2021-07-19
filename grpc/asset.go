@@ -15,6 +15,7 @@ func switchAsset(owner string, info *cache.AssetInfo) *pb.AssetInfo {
 	tmp.Owner = owner
 	tmp.Uid = info.UID
 	tmp.Name = info.Name
+	tmp.Remark = info.Remark
 	tmp.Updated = info.UpdateTime.Unix()
 	tmp.Created = info.CreateTime.Unix()
 	tmp.Creator = info.Creator
@@ -218,6 +219,27 @@ func (mine *AssetService)UpdateSmall(ctx context.Context, in *pb.ReqAssetFlag, o
 		return nil
 	}
 	err := info.UpdateSmall(in.Operator, in.Flag)
+	if err != nil {
+		out.Status = outError(path, err.Error(), pb.ResultStatus_DBException)
+		return nil
+	}
+	out.Status = outLog(path, out)
+	return nil
+}
+
+func (mine *AssetService)UpdateBase(ctx context.Context, in *pb.ReqAssetUpdate, out *pb.ReplyInfo) error {
+	path := "asset.updateBase"
+	inLog(path, in)
+	if len(in.Uid) < 1 {
+		out.Status = outError(path, "the uid is empty", pb.ResultStatus_Empty)
+		return nil
+	}
+	info := cache.Context().GetAsset(in.Uid)
+	if info == nil {
+		out.Status = outError(path, "the asset not found", pb.ResultStatus_NotExisted)
+		return nil
+	}
+	err := info.UpdateBase(in.Operator, in.Name, in.Remark)
 	if err != nil {
 		out.Status = outError(path, err.Error(), pb.ResultStatus_DBException)
 		return nil

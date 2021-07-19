@@ -28,6 +28,7 @@ type Asset struct {
 	Language string `json:"language" bson:"language"`
 	Snapshot string `json:"snapshot" bson:"snapshot"`
 	Small string `json:"small" bson:"small"`
+	Remark string `json:"remark" bson:"remark"`
 	Width uint32 `json:"width" bson:"width"`
 	Height uint32 `json:"height" bson:"height"`
 }
@@ -88,6 +89,16 @@ func UpdateAssetSmall(uid, small,operator string) error {
 	}
 
 	msg := bson.M{"small": small,"operator": operator, "updatedAt": time.Now()}
+	_, err := updateOne(TableAssets, uid, msg)
+	return err
+}
+
+func UpdateAssetBase(uid, name, remark,operator string) error {
+	if len(uid) < 2 {
+		return errors.New("db asset uid is empty of GetAsset")
+	}
+
+	msg := bson.M{"name": name, "remark": remark, "operator": operator, "updatedAt": time.Now()}
 	_, err := updateOne(TableAssets, uid, msg)
 	return err
 }
