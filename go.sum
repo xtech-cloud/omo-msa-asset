@@ -608,6 +608,12 @@ github.com/xtech-cloud/omo-msp-asset v1.2.1 h1:BaCAhscn/eLmAL556kADe8WpZJu4sUrKx
 github.com/xtech-cloud/omo-msp-asset v1.2.1/go.mod h1:wne1agQVB5puwsQvV6WR31UC96c1/pyxXBjY68ta8kU=
 github.com/xtech-cloud/omo-msp-asset v1.2.2 h1:4svK/wyFltxWOyslup6U8bB+W50jpjszz1GxURX+IDc=
 github.com/xtech-cloud/omo-msp-asset v1.2.2/go.mod h1:wne1agQVB5puwsQvV6WR31UC96c1/pyxXBjY68ta8kU=
+github.com/xtech-cloud/omo-msp-asset v1.2.3 h1:rcjFMEvHo4Rnt7RwFSInPsUqIpgMvzHa0Fa9DbZ9bHE=
+github.com/xtech-cloud/omo-msp-asset v1.2.3/go.mod h1:wne1agQVB5puwsQvV6WR31UC96c1/pyxXBjY68ta8kU=
+github.com/xtech-cloud/omo-msp-asset v1.2.4 h1:KHtqDC4Gzu3hE9ShoWoQYkvKSkknY5xJkNxbrp84FVI=
+github.com/xtech-cloud/omo-msp-asset v1.2.4/go.mod h1:wne1agQVB5puwsQvV6WR31UC96c1/pyxXBjY68ta8kU=
+github.com/xtech-cloud/omo-msp-asset v1.2.5 h1:qGBruDNk9O+Dy+OQIVDe0e1BkCN/4q6/cOruc+9KUNg=
+github.com/xtech-cloud/omo-msp-asset v1.2.5/go.mod h1:wne1agQVB5puwsQvV6WR31UC96c1/pyxXBjY68ta8kU=
 github.com/xtech-cloud/omo-msp-favorites v1.0.0 h1:CK088HCHdR0CDVY9VzhLgQlGBDcXDaRlIpPCYVj0trw=
 github.com/xtech-cloud/omo-msp-favorites v1.0.0/go.mod h1:maEtxehL0SCje9JMNDrSpM+yE+wvYTvAfe2JL+VtwVI=
 github.com/xtech-cloud/omo-msp-favorites v1.0.1 h1:xOOJfSE+T4ob8z+7onBYavxlD+0DaMRYrPmL59ZKDTk=

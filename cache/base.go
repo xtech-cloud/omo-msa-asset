@@ -13,14 +13,13 @@ import (
 )
 
 type cacheContext struct {
-	owners []*OwnerInfo
+
 }
 
 var cacheCtx *cacheContext
 
 func InitData() error {
 	cacheCtx = &cacheContext{}
-	cacheCtx.owners = make([]*OwnerInfo, 0, 100)
 
 	err := nosql.InitDB(config.Schema.Database.IP, config.Schema.Database.Port, config.Schema.Database.Name, config.Schema.Database.Type)
 	if err == nil {
@@ -36,13 +35,11 @@ func Context() *cacheContext {
 }
 
 func (mine *cacheContext)GetThumb(uid string) *ThumbInfo {
-	for _, owner := range mine.owners {
-		for _, asset := range owner.assets {
-			thumb := asset.GetThumb(uid)
-			if thumb != nil {
-				return thumb
-			}
-		}
+	db,_ := nosql.GetThumb(uid)
+	if db != nil {
+		info := new(ThumbInfo)
+		info.initInfo(db)
+		return info
 	}
 	return nil
 }
@@ -94,7 +91,7 @@ func RefreshCDN(url string) bool {
 	return true
 }
 
-func DeleteContentFromCloud(key string) error {
+func deleteContentFromCloud(key string) error {
 	if len(key) < 1 {
 		return errors.New("cache: the key is empty")
 	}

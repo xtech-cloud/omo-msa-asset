@@ -10,6 +10,11 @@ import (
 	"time"
 )
 
+const (
+	OwnerTypePerson = 1
+	OwnerTypeUnit = 0
+)
+
 const UP_QINIU = "qiniu"
 
 type AssetInfo struct {
@@ -21,6 +26,7 @@ type AssetInfo struct {
 	UID        string `json:"uid"`
 	Name       string `json:"name"`
 	Remark    string
+	Meta  string
 	Creator string
 	Operator string
 
@@ -34,39 +40,65 @@ type AssetInfo struct {
 	Snapshot string
 	// 封面小图
 	Small string
+	Weight uint32
 	CreateTime time.Time
 	UpdateTime time.Time
 }
 
-func (mine *cacheContext)GetAsset(uid string) *AssetInfo {
-	for i := 0;i < len(cacheCtx.owners);i += 1{
-		info := cacheCtx.owners[i].GetAsset(uid)
-		if info != nil {
-			return info
-		}
+
+func (mine *cacheContext)CreateAsset(info *AssetInfo) error {
+	db := new(nosql.Asset)
+	db.UID = primitive.NewObjectID()
+	db.ID = nosql.GetAssetNextID()
+	db.CreatedTime = time.Now()
+	db.Creator = info.Creator
+	db.Operator = info.Operator
+	db.Name = info.Name
+
+	db.Owner = info.Owner
+	db.Type = info.Type
+	db.Size = info.Size
+	db.UUID = info.UUID
+	db.Format = info.Format
+	db.MD5 = info.MD5
+	db.Version = info.Version
+	db.Language = info.Language
+	db.Snapshot = info.Snapshot
+	db.Small = info.Small
+	db.Width = info.Width
+	db.Height = info.Height
+	db.Weight = 0
+	err := nosql.CreateAsset(db)
+	if err == nil {
+		info.UID = db.UID.Hex()
+		info.ID = db.ID
+		info.CreateTime = db.CreatedTime
 	}
+	return err
+}
+
+func (mine *cacheContext)GetAsset(uid string) *AssetInfo {
 	db,err := nosql.GetAsset(uid)
 	if err == nil {
 		info := new(AssetInfo)
 		info.initInfo(db)
-		owner := cacheCtx.GetOwner(info.Owner)
-		owner.AddAsset(info)
 		return info
 	}
 	return nil
 }
 
-func (mine *cacheContext)RemoveAsset(uid, operator string) error {
-	err := nosql.RemoveAsset(uid, operator)
-	if err == nil {
-		for i := 0;i < len(cacheCtx.owners);i += 1{
-			if cacheCtx.owners[i].HadAsset(uid) {
-				cacheCtx.owners[i].deleteAsset(uid)
-				break
-			}
-		}
+func (mine *cacheContext)GetAssetsByOwner(uid string) []*AssetInfo {
+	array,err := nosql.GetAssetsByOwner(uid)
+	if err != nil {
+		return make([]*AssetInfo, 0, 1)
 	}
-	return err
+	list := make([]*AssetInfo, 0, len(array))
+	for _, asset := range array {
+		info := new(AssetInfo)
+		info.initInfo(asset)
+		list = append(list, info)
+	}
+	return list
 }
 
 func (mine *AssetInfo)initInfo(db *nosql.Asset)  {
@@ -78,6 +110,8 @@ func (mine *AssetInfo)initInfo(db *nosql.Asset)  {
 	mine.Operator = db.Operator
 	mine.Name = db.Name
 	mine.Remark = db.Remark
+	mine.Meta = db.Meta
+	mine.Weight = db.Weight
 
 	mine.Size = db.Size
 	mine.UUID = db.UUID
@@ -109,7 +143,17 @@ func (mine *AssetInfo)GetThumbs() ([]*ThumbInfo,error) {
 }
 
 func (mine *AssetInfo)Remove(operator string) error {
-	return nosql.RemoveAsset(mine.UID, operator)
+	err := nosql.RemoveAsset(mine.UID)
+	if err == nil {
+		_ = deleteContentFromCloud(mine.UUID)
+		if len(mine.Snapshot) > 2 {
+			_ = deleteContentFromCloud(mine.Snapshot)
+		}
+		if len(mine.Small) > 2 {
+			_ = deleteContentFromCloud(mine.Small)
+		}
+	}
+	return err
 }
 
 func (mine *AssetInfo)UpdateSnapshot(operator, snapshot string) error {
@@ -134,6 +178,25 @@ func (mine *AssetInfo)UpdateBase(operator, name, remark string) error {
 	if err == nil {
 		mine.Name = name
 		mine.Remark = remark
+		mine.Operator = operator
+	}
+	return err
+}
+
+func (mine *AssetInfo)UpdateMeta(operator, meta string) error {
+	err := nosql.UpdateAssetMeta(mine.UID, meta, operator)
+	if err == nil {
+		mine.Meta = meta
+		mine.Operator = operator
+	}
+	return err
+}
+
+func (mine *AssetInfo)UpdateWeight(weight uint32, operator string) error {
+	err := nosql.UpdateAssetWeight(mine.UID, operator, weight)
+	if err == nil {
+		mine.Weight = weight
+		mine.Operator = operator
 	}
 	return err
 }

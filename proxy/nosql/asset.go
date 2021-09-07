@@ -29,6 +29,8 @@ type Asset struct {
 	Snapshot string `json:"snapshot" bson:"snapshot"`
 	Small string `json:"small" bson:"small"`
 	Remark string `json:"remark" bson:"remark"`
+	Meta string `json:"meta" bson:"meta"`
+	Weight uint32 `json:"weight" bson:"weight"`
 	Width uint32 `json:"width" bson:"width"`
 	Height uint32 `json:"height" bson:"height"`
 }
@@ -43,11 +45,8 @@ func GetAssetNextID() uint64 {
 	return num
 }
 
-func RemoveAsset(uid, operator string) error {
-	if len(uid) < 2 {
-		return errors.New("db Asset uid is empty ")
-	}
-	_, err := removeOne(TableAssets, uid, operator)
+func RemoveAsset(uid string) error {
+	_, err := deleteOne(TableAssets, uid)
 	return err
 }
 
@@ -95,10 +94,30 @@ func UpdateAssetSmall(uid, small,operator string) error {
 
 func UpdateAssetBase(uid, name, remark,operator string) error {
 	if len(uid) < 2 {
-		return errors.New("db asset uid is empty of GetAsset")
+		return errors.New("db asset uid is empty of UpdateAssetBase")
 	}
 
 	msg := bson.M{"name": name, "remark": remark, "operator": operator, "updatedAt": time.Now()}
+	_, err := updateOne(TableAssets, uid, msg)
+	return err
+}
+
+func UpdateAssetMeta(uid, meta, operator string) error {
+	if len(uid) < 2 {
+		return errors.New("db asset uid is empty of UpdateAssetMeta")
+	}
+
+	msg := bson.M{"meta": meta, "operator": operator, "updatedAt": time.Now()}
+	_, err := updateOne(TableAssets, uid, msg)
+	return err
+}
+
+func UpdateAssetWeight(uid, operator string, weight uint32) error {
+	if len(uid) < 2 {
+		return errors.New("db asset uid is empty of UpdateAssetWeight")
+	}
+
+	msg := bson.M{"weight": weight, "operator": operator, "updatedAt": time.Now()}
 	_, err := updateOne(TableAssets, uid, msg)
 	return err
 }
