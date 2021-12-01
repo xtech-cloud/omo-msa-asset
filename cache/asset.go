@@ -215,6 +215,7 @@ func (mine *AssetInfo)getURL(key string) string {
 		}else{
 			return storage.MakePublicURL(config.Schema.Storage.Domain, key)
 		}
+
 	} else {
 		return mine.UID
 	}

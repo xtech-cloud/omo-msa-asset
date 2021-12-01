@@ -61,7 +61,7 @@ func (mine *cacheContext) GetThumbsByOwner(uid string) []*ThumbInfo {
 }
 
 
-func (mine *cacheContext)GetUpToken() string {
+func (mine *cacheContext)GetUpToken(key string) string {
 	cof := config.Schema.Storage
 	mac := auth.New(cof.AccessKey, cof.SecretKey)
 	// 设置上传凭证有效期
@@ -69,6 +69,9 @@ func (mine *cacheContext)GetUpToken() string {
 		Scope:      config.Schema.Storage.Bucket,
 		ReturnBody: `{"key":"$(key)","hash":"$(etag)","size":$(fsize),"type":"$(mimeType)", 
 		"img":$(imageInfo), "uuid":"$(uuid)", "bucket":"$(bucket)","name":"$(fname)"}`,
+	}
+	if len(key) > 2 {
+		putPolicy.Scope = config.Schema.Storage.Bucket+":"+key
 	}
 	putPolicy.Expires = uint64(config.Schema.Storage.Expire) //有效期
 

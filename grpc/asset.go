@@ -168,8 +168,9 @@ func (mine *AssetService)GetToken(ctx context.Context, in *pb.RequestInfo, out *
 	out.Domain = config.Schema.Storage.Domain
 	out.Bucket = config.Schema.Storage.Bucket
 	out.Limit = uint32(config.Schema.Storage.Limit)
-	out.Token = cache.Context().GetUpToken()
+	out.Token = cache.Context().GetUpToken(in.Uid)
 	out.Status = outLog(path, out)
+
 	return nil
 }
 
