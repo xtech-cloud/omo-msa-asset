@@ -37,6 +37,7 @@ func switchAsset(owner string, info *cache.AssetInfo) *pb.AssetInfo {
 	tmp.Width = info.Width
 	tmp.Height = info.Height
 	tmp.Weight = info.Weight
+	tmp.Status = uint32(info.Status)
 
 	thumbs,er := info.GetThumbs()
 	if er == nil {
@@ -275,6 +276,28 @@ func (mine *AssetService)UpdateWeight(ctx context.Context, in *pb.ReqAssetWeight
 		out.Status = outError(path, err.Error(), pb.ResultStatus_DBException)
 		return nil
 	}
+	out.Status = outLog(path, out)
+	return nil
+}
+
+func (mine *AssetService)UpdateStatus(ctx context.Context, in *pb.ReqAssetWeight, out *pb.ReplyInfo) error {
+	path := "asset.updateStatus"
+	inLog(path, in)
+	if len(in.Uid) < 1 {
+		out.Status = outError(path, "the uid is empty", pb.ResultStatus_Empty)
+		return nil
+	}
+	info := cache.Context().GetAsset(in.Uid)
+	if info == nil {
+		out.Status = outError(path, "the asset not found", pb.ResultStatus_NotExisted)
+		return nil
+	}
+	err := info.UpdateStatus(uint8(in.Weight), in.Operator)
+	if err != nil {
+		out.Status = outError(path, err.Error(), pb.ResultStatus_DBException)
+		return nil
+	}
+	out.Uid = in.Uid
 	out.Status = outLog(path, out)
 	return nil
 }

@@ -68,8 +68,6 @@ func md5hex(_file string) string {
 		return ""
 	}
 	defer f.Close()
-
 	io.Copy(h, f)
-
 	return hex.EncodeToString(h.Sum(nil))
 }

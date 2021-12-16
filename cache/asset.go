@@ -17,8 +17,14 @@ const (
 
 const UP_QINIU = "qiniu"
 
+const (
+	StatusIdle uint8 = 0
+	StatusHide uint8 = 1
+)
+
 type AssetInfo struct {
 	Type uint8
+	Status uint8
 	Size uint64
 	Width uint32
 	Height uint32
@@ -45,7 +51,6 @@ type AssetInfo struct {
 	UpdateTime time.Time
 }
 
-
 func (mine *cacheContext)CreateAsset(info *AssetInfo) error {
 	db := new(nosql.Asset)
 	db.UID = primitive.NewObjectID()
@@ -68,6 +73,7 @@ func (mine *cacheContext)CreateAsset(info *AssetInfo) error {
 	db.Width = info.Width
 	db.Height = info.Height
 	db.Weight = 0
+	db.Status = StatusIdle
 	err := nosql.CreateAsset(db)
 	if err == nil {
 		info.UID = db.UID.Hex()
@@ -126,6 +132,8 @@ func (mine *AssetInfo)initInfo(db *nosql.Asset)  {
 
 	mine.Width = db.Width
 	mine.Height = db.Height
+	mine.Weight = db.Weight
+	mine.Status = db.Status
 }
 
 func (mine *AssetInfo)GetThumbs() ([]*ThumbInfo,error) {
@@ -196,6 +204,15 @@ func (mine *AssetInfo)UpdateWeight(weight uint32, operator string) error {
 	err := nosql.UpdateAssetWeight(mine.UID, operator, weight)
 	if err == nil {
 		mine.Weight = weight
+		mine.Operator = operator
+	}
+	return err
+}
+
+func (mine *AssetInfo)UpdateStatus(st uint8, operator string) error {
+	err := nosql.UpdateAssetStatus(mine.UID, operator, st)
+	if err == nil {
+		mine.Status = st
 		mine.Operator = operator
 	}
 	return err
