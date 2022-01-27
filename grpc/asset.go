@@ -145,6 +145,15 @@ func (mine *AssetService)GetList(ctx context.Context, in *pb.ReqAssetList, out *
 	return nil
 }
 
+func (mine *AssetService)GetByFilter(ctx context.Context, in *pb.RequestFilter, out *pb.ReplyAssetList) error {
+	path := "asset.getByFilter"
+	inLog(path, in)
+	out.List = make([]*pb.AssetInfo, 0, 20)
+
+	out.Status = outLog(path, fmt.Sprintf("the length = %d", len(out.List)))
+	return nil
+}
+
 func (mine *AssetService)GetByOwner(ctx context.Context, in *pb.RequestInfo, out *pb.ReplyAssetList) error {
 	path := "asset.getByOwner"
 	inLog(path, in)
