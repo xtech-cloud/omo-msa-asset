@@ -37,7 +37,7 @@ docker:
 
 .PHONY: updev
 updev:
-	scp -P 2209 dist/${APP_NAME}-${BUILD_VERSION}.tar.gz root@172.16.10.52:/root/
+	scp -P 2209 dist/${APP_NAME}-${BUILD_VERSION}.tar.gz root@172.16.10.252:/root/
 
 .PHONY: upload
 upload:
