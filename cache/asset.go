@@ -219,6 +219,15 @@ func (mine *AssetInfo)UpdateStatus(st uint8, operator string) error {
 	return err
 }
 
+func (mine *AssetInfo)UpdateType(st uint8, operator string) error {
+	err := nosql.UpdateAssetType(mine.UID, operator, st)
+	if err == nil {
+		mine.Type = st
+		mine.Operator = operator
+	}
+	return err
+}
+
 func (mine *AssetInfo)getURL(key string) string {
 	if len(key) < 2 {
 		return ""

@@ -6,6 +6,7 @@ import (
 	pb "github.com/xtech-cloud/omo-msp-asset/proto/asset"
 	"omo.msa.asset/cache"
 	"omo.msa.asset/config"
+	"strconv"
 )
 
 type AssetService struct {}
@@ -302,6 +303,35 @@ func (mine *AssetService)UpdateStatus(ctx context.Context, in *pb.ReqAssetWeight
 		return nil
 	}
 	err := info.UpdateStatus(uint8(in.Weight), in.Operator)
+	if err != nil {
+		out.Status = outError(path, err.Error(), pb.ResultStatus_DBException)
+		return nil
+	}
+	out.Uid = in.Uid
+	out.Status = outLog(path, out)
+	return nil
+}
+
+func (mine *AssetService)UpdateByFilter(ctx context.Context, in *pb.RequestUpdate, out *pb.ReplyInfo) error {
+	path := "asset.updateStatus"
+	inLog(path, in)
+	if len(in.Uid) < 1 {
+		out.Status = outError(path, "the uid is empty", pb.ResultStatus_Empty)
+		return nil
+	}
+	info := cache.Context().GetAsset(in.Uid)
+	if info == nil {
+		out.Status = outError(path, "the asset not found", pb.ResultStatus_NotExisted)
+		return nil
+	}
+	var err error
+	if in.Field == "type" {
+		tp,_ := strconv.ParseUint(in.Value, 10, 32)
+		err = info.UpdateType(uint8(tp), in.Operator)
+	}else {
+		out.Status = outError(path, "not define the field", pb.ResultStatus_DBException)
+		return nil
+	}
 	if err != nil {
 		out.Status = outError(path, err.Error(), pb.ResultStatus_DBException)
 		return nil

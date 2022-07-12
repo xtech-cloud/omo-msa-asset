@@ -133,6 +133,16 @@ func UpdateAssetStatus(uid, operator string, status uint8) error {
 	return err
 }
 
+func UpdateAssetType(uid, operator string, tp uint8) error {
+	if len(uid) < 2 {
+		return errors.New("db asset uid is empty of UpdateAssetType")
+	}
+
+	msg := bson.M{"type": tp, "operator": operator, "updatedAt": time.Now()}
+	_, err := updateOne(TableAssets, uid, msg)
+	return err
+}
+
 func UpdateAssetOwner(uid, owner, operator string) error {
 	if len(uid) < 2 {
 		return errors.New("db asset uid is empty of GetAsset")
