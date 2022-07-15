@@ -328,6 +328,8 @@ func (mine *AssetService)UpdateByFilter(ctx context.Context, in *pb.RequestUpdat
 	if in.Field == "type" {
 		tp,_ := strconv.ParseUint(in.Value, 10, 32)
 		err = info.UpdateType(uint8(tp), in.Operator)
+	}else if in.Field == "language" {
+		err = info.UpdateLanguage(in.Value, in.Operator)
 	}else {
 		out.Status = outError(path, "not define the field", pb.ResultStatus_DBException)
 		return nil

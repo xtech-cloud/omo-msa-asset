@@ -228,6 +228,15 @@ func (mine *AssetInfo)UpdateType(st uint8, operator string) error {
 	return err
 }
 
+func (mine *AssetInfo)UpdateLanguage(lan, operator string) error {
+	err := nosql.UpdateAssetLanguage(mine.UID, operator, lan)
+	if err == nil {
+		mine.Language = lan
+		mine.Operator = operator
+	}
+	return err
+}
+
 func (mine *AssetInfo)getURL(key string) string {
 	if len(key) < 2 {
 		return ""
