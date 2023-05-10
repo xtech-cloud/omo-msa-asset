@@ -12,7 +12,7 @@ import (
 
 const (
 	OwnerTypePerson = 1
-	OwnerTypeUnit = 0
+	OwnerTypeUnit   = 0
 )
 
 const UP_QINIU = "qiniu"
@@ -23,35 +23,36 @@ const (
 )
 
 type AssetInfo struct {
-	Type uint8
-	Status uint8
-	Size uint64
-	Width uint32
-	Height uint32
-	ID         uint64 `json:"-"`
-	UID        string `json:"uid"`
-	Name       string `json:"name"`
-	Remark    string
-	Meta  string
-	Creator string
+	Type     uint8
+	Status   uint8
+	Size     uint64
+	Width    uint32
+	Height   uint32
+	ID       uint64 `json:"-"`
+	UID      string `json:"uid"`
+	Name     string `json:"name"`
+	Remark   string
+	Meta     string
+	Creator  string
 	Operator string
 
-	Owner string
-	UUID string
-	Version string
-	Format string
-	MD5 string
+	Owner    string
+	UUID     string
+	Version  string
+	Format   string
+	MD5      string
 	Language string
 	// 快照，中图
 	Snapshot string
 	// 封面小图
-	Small string
-	Weight uint32
+	Small      string
+	Weight     uint32
 	CreateTime time.Time
 	UpdateTime time.Time
+	Links      []string
 }
 
-func (mine *cacheContext)CreateAsset(info *AssetInfo) error {
+func (mine *cacheContext) CreateAsset(info *AssetInfo) error {
 	db := new(nosql.Asset)
 	db.UID = primitive.NewObjectID()
 	db.ID = nosql.GetAssetNextID()
@@ -75,6 +76,7 @@ func (mine *cacheContext)CreateAsset(info *AssetInfo) error {
 	db.Meta = info.Meta
 	db.Weight = 0
 	db.Status = StatusIdle
+	db.Links = info.Links
 	err := nosql.CreateAsset(db)
 	if err == nil {
 		info.UID = db.UID.Hex()
@@ -84,8 +86,8 @@ func (mine *cacheContext)CreateAsset(info *AssetInfo) error {
 	return err
 }
 
-func (mine *cacheContext)GetAsset(uid string) *AssetInfo {
-	db,err := nosql.GetAsset(uid)
+func (mine *cacheContext) GetAsset(uid string) *AssetInfo {
+	db, err := nosql.GetAsset(uid)
 	if err == nil {
 		info := new(AssetInfo)
 		info.initInfo(db)
@@ -94,8 +96,8 @@ func (mine *cacheContext)GetAsset(uid string) *AssetInfo {
 	return nil
 }
 
-func (mine *cacheContext)GetAssetsByOwner(uid string) []*AssetInfo {
-	array,err := nosql.GetAssetsByOwner(uid)
+func (mine *cacheContext) GetAssetsByOwner(uid string) []*AssetInfo {
+	array, err := nosql.GetAssetsByOwner(uid)
 	if err != nil {
 		return make([]*AssetInfo, 0, 1)
 	}
@@ -108,7 +110,21 @@ func (mine *cacheContext)GetAssetsByOwner(uid string) []*AssetInfo {
 	return list
 }
 
-func (mine *AssetInfo)initInfo(db *nosql.Asset)  {
+func (mine *cacheContext) GetAssetsByLink(link string) []*AssetInfo {
+	array, err := nosql.GetAssetsByLink(link)
+	if err != nil {
+		return make([]*AssetInfo, 0, 1)
+	}
+	list := make([]*AssetInfo, 0, len(array))
+	for _, asset := range array {
+		info := new(AssetInfo)
+		info.initInfo(asset)
+		list = append(list, info)
+	}
+	return list
+}
+
+func (mine *AssetInfo) initInfo(db *nosql.Asset) {
 	mine.UID = db.UID.Hex()
 	mine.ID = db.ID
 	mine.CreateTime = db.CreatedTime
@@ -137,10 +153,10 @@ func (mine *AssetInfo)initInfo(db *nosql.Asset)  {
 	mine.Status = db.Status
 }
 
-func (mine *AssetInfo)GetThumbs() ([]*ThumbInfo,error) {
-	array,err := nosql.GetThumbsByAsset(mine.UID)
+func (mine *AssetInfo) GetThumbs() ([]*ThumbInfo, error) {
+	array, err := nosql.GetThumbsByAsset(mine.UID)
 	if err != nil {
-		return nil,err
+		return nil, err
 	}
 	list := make([]*ThumbInfo, 0, len(array))
 	for _, thumb := range array {
@@ -148,10 +164,10 @@ func (mine *AssetInfo)GetThumbs() ([]*ThumbInfo,error) {
 		tmp.initInfo(thumb)
 		list = append(list, tmp)
 	}
-	return list,nil
+	return list, nil
 }
 
-func (mine *AssetInfo)Remove(operator string) error {
+func (mine *AssetInfo) Remove(operator string) error {
 	err := nosql.RemoveAsset(mine.UID)
 	if err == nil {
 		_ = deleteContentFromCloud(mine.UUID)
@@ -165,15 +181,15 @@ func (mine *AssetInfo)Remove(operator string) error {
 	return err
 }
 
-func (mine *AssetInfo)UpdateSnapshot(operator, snapshot string) error {
-	err := nosql.UpdateAssetSnapshot(mine.UID, snapshot,operator)
+func (mine *AssetInfo) UpdateSnapshot(operator, snapshot string) error {
+	err := nosql.UpdateAssetSnapshot(mine.UID, snapshot, operator)
 	if err == nil {
 		mine.Snapshot = snapshot
 	}
 	return err
 }
 
-func (mine *AssetInfo)UpdateSmall(operator, small string) error {
+func (mine *AssetInfo) UpdateSmall(operator, small string) error {
 	err := nosql.UpdateAssetSmall(mine.UID, small, operator)
 	if err == nil {
 		mine.Small = small
@@ -182,7 +198,7 @@ func (mine *AssetInfo)UpdateSmall(operator, small string) error {
 	return err
 }
 
-func (mine *AssetInfo)UpdateBase(operator, name, remark string) error {
+func (mine *AssetInfo) UpdateBase(operator, name, remark string) error {
 	err := nosql.UpdateAssetBase(mine.UID, name, remark, operator)
 	if err == nil {
 		mine.Name = name
@@ -192,7 +208,7 @@ func (mine *AssetInfo)UpdateBase(operator, name, remark string) error {
 	return err
 }
 
-func (mine *AssetInfo)UpdateMeta(operator, meta string) error {
+func (mine *AssetInfo) UpdateMeta(operator, meta string) error {
 	err := nosql.UpdateAssetMeta(mine.UID, meta, operator)
 	if err == nil {
 		mine.Meta = meta
@@ -201,7 +217,7 @@ func (mine *AssetInfo)UpdateMeta(operator, meta string) error {
 	return err
 }
 
-func (mine *AssetInfo)UpdateWeight(weight uint32, operator string) error {
+func (mine *AssetInfo) UpdateWeight(weight uint32, operator string) error {
 	err := nosql.UpdateAssetWeight(mine.UID, operator, weight)
 	if err == nil {
 		mine.Weight = weight
@@ -210,7 +226,7 @@ func (mine *AssetInfo)UpdateWeight(weight uint32, operator string) error {
 	return err
 }
 
-func (mine *AssetInfo)UpdateStatus(st uint8, operator string) error {
+func (mine *AssetInfo) UpdateStatus(st uint8, operator string) error {
 	err := nosql.UpdateAssetStatus(mine.UID, operator, st)
 	if err == nil {
 		mine.Status = st
@@ -219,7 +235,16 @@ func (mine *AssetInfo)UpdateStatus(st uint8, operator string) error {
 	return err
 }
 
-func (mine *AssetInfo)UpdateType(st uint8, operator string) error {
+func (mine *AssetInfo) UpdateLinks(operator string, links []string) error {
+	err := nosql.UpdateAssetLinks(mine.UID, operator, links)
+	if err == nil {
+		mine.Links = links
+		mine.Operator = operator
+	}
+	return err
+}
+
+func (mine *AssetInfo) UpdateType(st uint8, operator string) error {
 	err := nosql.UpdateAssetType(mine.UID, operator, st)
 	if err == nil {
 		mine.Type = st
@@ -228,7 +253,16 @@ func (mine *AssetInfo)UpdateType(st uint8, operator string) error {
 	return err
 }
 
-func (mine *AssetInfo)UpdateLanguage(lan, operator string) error {
+func (mine *AssetInfo) UpdateOwner(operator, owner string) error {
+	err := nosql.UpdateAssetOwner(mine.UID, owner, operator)
+	if err == nil {
+		mine.Owner = owner
+		mine.Operator = operator
+	}
+	return err
+}
+
+func (mine *AssetInfo) UpdateLanguage(lan, operator string) error {
 	err := nosql.UpdateAssetLanguage(mine.UID, operator, lan)
 	if err == nil {
 		mine.Language = lan
@@ -237,7 +271,7 @@ func (mine *AssetInfo)UpdateLanguage(lan, operator string) error {
 	return err
 }
 
-func (mine *AssetInfo)getURL(key string) string {
+func (mine *AssetInfo) getURL(key string) string {
 	if len(key) < 2 {
 		return ""
 	}
@@ -248,7 +282,7 @@ func (mine *AssetInfo)getURL(key string) string {
 		if config.Schema.Storage.ACM > 0 {
 			mac := qbox.NewMac(config.Schema.Storage.AccessKey, config.Schema.Storage.SecretKey)
 			return storage.MakePrivateURL(mac, config.Schema.Storage.Domain, key, config.Schema.Storage.Period)
-		}else{
+		} else {
 			return storage.MakePublicURL(config.Schema.Storage.Domain, key)
 		}
 
@@ -269,7 +303,7 @@ func (mine *AssetInfo) SmallImageURL() string {
 	return mine.getURL(mine.Small)
 }
 
-func (mine *AssetInfo)HadThumbByFace(face string) bool {
+func (mine *AssetInfo) HadThumbByFace(face string) bool {
 	info := mine.GetThumbByFace(face)
 	if info == nil {
 		return false
@@ -277,8 +311,8 @@ func (mine *AssetInfo)HadThumbByFace(face string) bool {
 	return true
 }
 
-func (mine *AssetInfo)GetThumbByFace(face string) *ThumbInfo {
-	db,err := nosql.GetThumbByFace(mine.UID, face)
+func (mine *AssetInfo) GetThumbByFace(face string) *ThumbInfo {
+	db, err := nosql.GetThumbByFace(mine.UID, face)
 	if err != nil {
 		return nil
 	}
@@ -287,8 +321,8 @@ func (mine *AssetInfo)GetThumbByFace(face string) *ThumbInfo {
 	return tmp
 }
 
-func (mine *AssetInfo)GetThumb(uid string) *ThumbInfo {
-	db,err := nosql.GetThumb(uid)
+func (mine *AssetInfo) GetThumb(uid string) *ThumbInfo {
+	db, err := nosql.GetThumb(uid)
 	if err != nil {
 		return nil
 	}
@@ -297,7 +331,7 @@ func (mine *AssetInfo)GetThumb(uid string) *ThumbInfo {
 	return tmp
 }
 
-func (mine *AssetInfo)hadThumb(uid string) bool {
+func (mine *AssetInfo) hadThumb(uid string) bool {
 	info := mine.GetThumb(uid)
 	if info == nil {
 		return false
@@ -305,14 +339,14 @@ func (mine *AssetInfo)hadThumb(uid string) bool {
 	return true
 }
 
-func (mine *AssetInfo)RemoveThumb(uid, operator string) error {
+func (mine *AssetInfo) RemoveThumb(uid, operator string) error {
 	if !mine.hadThumb(uid) {
 		return nil
 	}
 	return nosql.RemoveThumb(uid, operator)
 }
 
-func (mine *AssetInfo)CreateThumb(face, url, operator, owner string, score,similar,blur float32) (*ThumbInfo,error) {
+func (mine *AssetInfo) CreateThumb(face, url, operator, owner string, score, similar, blur float32) (*ThumbInfo, error) {
 	t := mine.GetThumbByFace(face)
 	if t != nil {
 		return t, nil
@@ -338,4 +372,3 @@ func (mine *AssetInfo)CreateThumb(face, url, operator, owner string, score,simil
 	}
 	return nil, err
 }
-

@@ -18,22 +18,23 @@ type Asset struct {
 	Creator     string             `json:"creator" bson:"creator"`
 	Operator    string             `json:"operator" bson:"operator"`
 
-	Status 	 uint8 `json:"status" bson:"status"`
-	Type     uint8  `json:"type" bson:"type"`
-	Owner    string `json:"owner" bson:"owner"`
-	Size     uint64 `json:"size" bson:"size"`
-	UUID     string `json:"uuid" bson:"uuid"`
-	Format   string `json:"format" bson:"format"`
-	MD5      string `json:"md5" bson:"md5"`
-	Version  string `json:"version" bson:"version"`
-	Language string `json:"language" bson:"language"`
-	Snapshot string `json:"snapshot" bson:"snapshot"`
-	Small string `json:"small" bson:"small"`
-	Remark string `json:"remark" bson:"remark"`
-	Meta string `json:"meta" bson:"meta"`
-	Weight uint32 `json:"weight" bson:"weight"`
-	Width uint32 `json:"width" bson:"width"`
-	Height uint32 `json:"height" bson:"height"`
+	Status   uint8    `json:"status" bson:"status"`
+	Type     uint8    `json:"type" bson:"type"`
+	Owner    string   `json:"owner" bson:"owner"`
+	Size     uint64   `json:"size" bson:"size"`
+	UUID     string   `json:"uuid" bson:"uuid"`
+	Format   string   `json:"format" bson:"format"`
+	MD5      string   `json:"md5" bson:"md5"`
+	Version  string   `json:"version" bson:"version"`
+	Language string   `json:"language" bson:"language"`
+	Snapshot string   `json:"snapshot" bson:"snapshot"`
+	Small    string   `json:"small" bson:"small"`
+	Remark   string   `json:"remark" bson:"remark"`
+	Meta     string   `json:"meta" bson:"meta"`
+	Weight   uint32   `json:"weight" bson:"weight"`
+	Width    uint32   `json:"width" bson:"width"`
+	Height   uint32   `json:"height" bson:"height"`
+	Links    []string `json:"links" bson:"links"`
 }
 
 func CreateAsset(info *Asset) error {
@@ -73,27 +74,27 @@ func GetAsset(uid string) (*Asset, error) {
 	return model, nil
 }
 
-func UpdateAssetSnapshot(uid, snapshot,operator string) error {
+func UpdateAssetSnapshot(uid, snapshot, operator string) error {
 	if len(uid) < 2 {
 		return errors.New("db asset uid is empty of GetAsset")
 	}
 
-	msg := bson.M{"snapshot": snapshot,"operator": operator, "updatedAt": time.Now()}
+	msg := bson.M{"snapshot": snapshot, "operator": operator, "updatedAt": time.Now()}
 	_, err := updateOne(TableAssets, uid, msg)
 	return err
 }
 
-func UpdateAssetSmall(uid, small,operator string) error {
+func UpdateAssetSmall(uid, small, operator string) error {
 	if len(uid) < 2 {
 		return errors.New("db asset uid is empty of GetAsset")
 	}
 
-	msg := bson.M{"small": small,"operator": operator, "updatedAt": time.Now()}
+	msg := bson.M{"small": small, "operator": operator, "updatedAt": time.Now()}
 	_, err := updateOne(TableAssets, uid, msg)
 	return err
 }
 
-func UpdateAssetBase(uid, name, remark,operator string) error {
+func UpdateAssetBase(uid, name, remark, operator string) error {
 	if len(uid) < 2 {
 		return errors.New("db asset uid is empty of UpdateAssetBase")
 	}
@@ -133,12 +134,32 @@ func UpdateAssetStatus(uid, operator string, status uint8) error {
 	return err
 }
 
+func UpdateAssetLinks(uid, operator string, arr []string) error {
+	if len(uid) < 2 {
+		return errors.New("db asset uid is empty of UpdateAssetWeight")
+	}
+
+	msg := bson.M{"links": arr, "operator": operator, "updatedAt": time.Now()}
+	_, err := updateOne(TableAssets, uid, msg)
+	return err
+}
+
 func UpdateAssetType(uid, operator string, tp uint8) error {
 	if len(uid) < 2 {
 		return errors.New("db asset uid is empty of UpdateAssetType")
 	}
 
 	msg := bson.M{"type": tp, "operator": operator, "updatedAt": time.Now()}
+	_, err := updateOne(TableAssets, uid, msg)
+	return err
+}
+
+func UpdateAssetOwner(uid, owner, operator string) error {
+	if len(uid) < 2 {
+		return errors.New("db asset uid is empty of UpdateAssetType")
+	}
+
+	msg := bson.M{"owner": owner, "operator": operator, "updatedAt": time.Now()}
 	_, err := updateOne(TableAssets, uid, msg)
 	return err
 }
@@ -153,20 +174,29 @@ func UpdateAssetLanguage(uid, operator, lan string) error {
 	return err
 }
 
-func UpdateAssetOwner(uid, owner, operator string) error {
-	if len(uid) < 2 {
-		return errors.New("db asset uid is empty of GetAsset")
-	}
-
-	msg := bson.M{"owner": owner,"operator": operator, "updatedAt": time.Now()}
-	_, err := updateOne(TableAssets, uid, msg)
-	return err
-}
-
 func GetAssetsByOwner(owner string) ([]*Asset, error) {
 	var items = make([]*Asset, 0, 20)
 	def := new(time.Time)
 	filter := bson.M{"owner": owner, "deleteAt": def}
+	cursor, err1 := findMany(TableAssets, filter, 0)
+	if err1 != nil {
+		return nil, err1
+	}
+	for cursor.Next(context.Background()) {
+		var node = new(Asset)
+		if err := cursor.Decode(&node); err != nil {
+			return nil, err
+		} else {
+			items = append(items, node)
+		}
+	}
+	return items, nil
+}
+
+func GetAssetsByLink(link string) ([]*Asset, error) {
+	var items = make([]*Asset, 0, 20)
+	def := new(time.Time)
+	filter := bson.M{"links": link, "deleteAt": def}
 	cursor, err1 := findMany(TableAssets, filter, 0)
 	if err1 != nil {
 		return nil, err1

@@ -9,7 +9,7 @@ import (
 	"strconv"
 )
 
-type AssetService struct {}
+type AssetService struct{}
 
 func switchAsset(owner string, info *cache.AssetInfo) *pb.AssetInfo {
 	tmp := new(pb.AssetInfo)
@@ -39,8 +39,9 @@ func switchAsset(owner string, info *cache.AssetInfo) *pb.AssetInfo {
 	tmp.Height = info.Height
 	tmp.Weight = info.Weight
 	tmp.Status = uint32(info.Status)
+	tmp.Links = info.Links
 
-	thumbs,er := info.GetThumbs()
+	thumbs, er := info.GetThumbs()
 	if er == nil {
 		tmp.Thumbs = make([]*pb.ThumbBrief, 0, len(thumbs))
 		for _, thumb := range thumbs {
@@ -63,7 +64,7 @@ func switchThumbBrief(info *cache.ThumbInfo) *pb.ThumbBrief {
 	return tmp
 }
 
-func (mine *AssetService)AddOne(ctx context.Context, in *pb.ReqAssetAdd, out *pb.ReplyAssetOne) error {
+func (mine *AssetService) AddOne(ctx context.Context, in *pb.ReqAssetAdd, out *pb.ReplyAssetOne) error {
 	path := "asset.addOne"
 	inLog(path, in)
 	if len(in.Owner) < 1 {
@@ -95,7 +96,7 @@ func (mine *AssetService)AddOne(ctx context.Context, in *pb.ReqAssetAdd, out *pb
 	return nil
 }
 
-func (mine *AssetService)GetOne(ctx context.Context, in *pb.RequestInfo, out *pb.ReplyAssetOne) error {
+func (mine *AssetService) GetOne(ctx context.Context, in *pb.RequestInfo, out *pb.ReplyAssetOne) error {
 	path := "asset.getOne"
 	inLog(path, in)
 	if len(in.Uid) < 1 {
@@ -112,7 +113,7 @@ func (mine *AssetService)GetOne(ctx context.Context, in *pb.RequestInfo, out *pb
 	return nil
 }
 
-func (mine *AssetService)RemoveOne(ctx context.Context, in *pb.RequestInfo, out *pb.ReplyInfo) error {
+func (mine *AssetService) RemoveOne(ctx context.Context, in *pb.RequestInfo, out *pb.ReplyInfo) error {
 	path := "asset.removeOne"
 	inLog(path, in)
 	if len(in.Uid) < 1 {
@@ -132,7 +133,7 @@ func (mine *AssetService)RemoveOne(ctx context.Context, in *pb.RequestInfo, out 
 	return nil
 }
 
-func (mine *AssetService)GetList(ctx context.Context, in *pb.ReqAssetList, out *pb.ReplyAssetList) error {
+func (mine *AssetService) GetList(ctx context.Context, in *pb.ReqAssetList, out *pb.ReplyAssetList) error {
 	path := "asset.getList"
 	inLog(path, in)
 	out.List = make([]*pb.AssetInfo, 0, len(in.List))
@@ -146,16 +147,22 @@ func (mine *AssetService)GetList(ctx context.Context, in *pb.ReqAssetList, out *
 	return nil
 }
 
-func (mine *AssetService)GetByFilter(ctx context.Context, in *pb.RequestFilter, out *pb.ReplyAssetList) error {
+func (mine *AssetService) GetByFilter(ctx context.Context, in *pb.RequestFilter, out *pb.ReplyAssetList) error {
 	path := "asset.getByFilter"
 	inLog(path, in)
-	out.List = make([]*pb.AssetInfo, 0, 20)
-
+	var list []*cache.AssetInfo
+	if in.Key == "links" {
+		list = cache.Context().GetAssetsByLink(in.Key)
+	}
+	out.List = make([]*pb.AssetInfo, 0, len(list))
+	for _, info := range list {
+		out.List = append(out.List, switchAsset(info.Owner, info))
+	}
 	out.Status = outLog(path, fmt.Sprintf("the length = %d", len(out.List)))
 	return nil
 }
 
-func (mine *AssetService)GetByOwner(ctx context.Context, in *pb.RequestInfo, out *pb.ReplyAssetList) error {
+func (mine *AssetService) GetByOwner(ctx context.Context, in *pb.RequestInfo, out *pb.ReplyAssetList) error {
 	path := "asset.getByOwner"
 	inLog(path, in)
 	if len(in.Owner) < 1 {
@@ -172,7 +179,7 @@ func (mine *AssetService)GetByOwner(ctx context.Context, in *pb.RequestInfo, out
 	return nil
 }
 
-func (mine *AssetService)GetToken(ctx context.Context, in *pb.RequestInfo, out *pb.ReplyAssetToken) error {
+func (mine *AssetService) GetToken(ctx context.Context, in *pb.RequestInfo, out *pb.ReplyAssetToken) error {
 	path := "asset.getToken"
 	inLog(path, in)
 	out.Expire = uint32(config.Schema.Storage.Expire)
@@ -185,7 +192,7 @@ func (mine *AssetService)GetToken(ctx context.Context, in *pb.RequestInfo, out *
 	return nil
 }
 
-func (mine *AssetService)UpdateSnapshot(ctx context.Context, in *pb.ReqAssetFlag, out *pb.ReplyInfo) error {
+func (mine *AssetService) UpdateSnapshot(ctx context.Context, in *pb.ReqAssetFlag, out *pb.ReplyInfo) error {
 	path := "asset.updateSnapshot"
 	inLog(path, in)
 	if len(in.Uid) < 1 {
@@ -206,7 +213,7 @@ func (mine *AssetService)UpdateSnapshot(ctx context.Context, in *pb.ReqAssetFlag
 	return nil
 }
 
-func (mine *AssetService)UpdateSmall(ctx context.Context, in *pb.ReqAssetFlag, out *pb.ReplyInfo) error {
+func (mine *AssetService) UpdateSmall(ctx context.Context, in *pb.ReqAssetFlag, out *pb.ReplyInfo) error {
 	path := "asset.updateSmall"
 	inLog(path, in)
 	if len(in.Uid) < 1 {
@@ -227,7 +234,7 @@ func (mine *AssetService)UpdateSmall(ctx context.Context, in *pb.ReqAssetFlag, o
 	return nil
 }
 
-func (mine *AssetService)UpdateBase(ctx context.Context, in *pb.ReqAssetUpdate, out *pb.ReplyInfo) error {
+func (mine *AssetService) UpdateBase(ctx context.Context, in *pb.ReqAssetUpdate, out *pb.ReplyInfo) error {
 	path := "asset.updateBase"
 	inLog(path, in)
 	if len(in.Uid) < 1 {
@@ -248,7 +255,7 @@ func (mine *AssetService)UpdateBase(ctx context.Context, in *pb.ReqAssetUpdate, 
 	return nil
 }
 
-func (mine *AssetService)UpdateMeta(ctx context.Context, in *pb.ReqAssetFlag, out *pb.ReplyInfo) error {
+func (mine *AssetService) UpdateMeta(ctx context.Context, in *pb.ReqAssetFlag, out *pb.ReplyInfo) error {
 	path := "asset.updateMeta"
 	inLog(path, in)
 	if len(in.Uid) < 1 {
@@ -269,7 +276,7 @@ func (mine *AssetService)UpdateMeta(ctx context.Context, in *pb.ReqAssetFlag, ou
 	return nil
 }
 
-func (mine *AssetService)UpdateWeight(ctx context.Context, in *pb.ReqAssetWeight, out *pb.ReplyInfo) error {
+func (mine *AssetService) UpdateWeight(ctx context.Context, in *pb.ReqAssetWeight, out *pb.ReplyInfo) error {
 	path := "asset.updateWeight"
 	inLog(path, in)
 	if len(in.Uid) < 1 {
@@ -290,7 +297,7 @@ func (mine *AssetService)UpdateWeight(ctx context.Context, in *pb.ReqAssetWeight
 	return nil
 }
 
-func (mine *AssetService)UpdateStatus(ctx context.Context, in *pb.ReqAssetWeight, out *pb.ReplyInfo) error {
+func (mine *AssetService) UpdateStatus(ctx context.Context, in *pb.ReqAssetWeight, out *pb.ReplyInfo) error {
 	path := "asset.updateStatus"
 	inLog(path, in)
 	if len(in.Uid) < 1 {
@@ -312,7 +319,7 @@ func (mine *AssetService)UpdateStatus(ctx context.Context, in *pb.ReqAssetWeight
 	return nil
 }
 
-func (mine *AssetService)UpdateByFilter(ctx context.Context, in *pb.RequestUpdate, out *pb.ReplyInfo) error {
+func (mine *AssetService) UpdateByFilter(ctx context.Context, in *pb.RequestUpdate, out *pb.ReplyInfo) error {
 	path := "asset.updateStatus"
 	inLog(path, in)
 	if len(in.Uid) < 1 {
@@ -326,11 +333,15 @@ func (mine *AssetService)UpdateByFilter(ctx context.Context, in *pb.RequestUpdat
 	}
 	var err error
 	if in.Field == "type" {
-		tp,_ := strconv.ParseUint(in.Value, 10, 32)
+		tp, _ := strconv.ParseUint(in.Value, 10, 32)
 		err = info.UpdateType(uint8(tp), in.Operator)
-	}else if in.Field == "language" {
+	} else if in.Field == "language" {
 		err = info.UpdateLanguage(in.Value, in.Operator)
-	}else {
+	} else if in.Field == "links" {
+		err = info.UpdateLinks(in.Operator, in.Values)
+	} else if in.Field == "owner" {
+		err = info.UpdateOwner(in.Operator, in.Value)
+	} else {
 		out.Status = outError(path, "not define the field", pb.ResultStatus_DBException)
 		return nil
 	}
@@ -342,6 +353,3 @@ func (mine *AssetService)UpdateByFilter(ctx context.Context, in *pb.RequestUpdat
 	out.Status = outLog(path, out)
 	return nil
 }
-
-
-
