@@ -151,6 +151,7 @@ func (mine *AssetInfo) initInfo(db *nosql.Asset) {
 	mine.Height = db.Height
 	mine.Weight = db.Weight
 	mine.Status = db.Status
+	mine.Links = db.Links
 }
 
 func (mine *AssetInfo) GetThumbs() ([]*ThumbInfo, error) {
