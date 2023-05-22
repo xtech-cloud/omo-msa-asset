@@ -2,12 +2,9 @@ package main
 
 import (
 	"context"
-	"io"
 	"time"
 
 	"omo.msa.asset/config"
-
-	proto "github.com/xtech-cloud/omo-msp-favorite/proto/favorite"
 
 	"github.com/micro/go-micro/v2"
 	"github.com/micro/go-micro/v2/client"

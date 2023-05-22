@@ -74,6 +74,25 @@ func GetAsset(uid string) (*Asset, error) {
 	return model, nil
 }
 
+func GetAllAssets() ([]*Asset, error) {
+	var items = make([]*Asset, 0, 20)
+	def := new(time.Time)
+	filter := bson.M{"deleteAt": def}
+	cursor, err1 := findMany(TableAssets, filter, 0)
+	if err1 != nil {
+		return nil, err1
+	}
+	for cursor.Next(context.Background()) {
+		var node = new(Asset)
+		if err := cursor.Decode(&node); err != nil {
+			return nil, err
+		} else {
+			items = append(items, node)
+		}
+	}
+	return items, nil
+}
+
 func UpdateAssetSnapshot(uid, snapshot, operator string) error {
 	if len(uid) < 2 {
 		return errors.New("db asset uid is empty of GetAsset")
@@ -178,6 +197,25 @@ func GetAssetsByOwner(owner string) ([]*Asset, error) {
 	var items = make([]*Asset, 0, 20)
 	def := new(time.Time)
 	filter := bson.M{"owner": owner, "deleteAt": def}
+	cursor, err1 := findMany(TableAssets, filter, 0)
+	if err1 != nil {
+		return nil, err1
+	}
+	for cursor.Next(context.Background()) {
+		var node = new(Asset)
+		if err := cursor.Decode(&node); err != nil {
+			return nil, err
+		} else {
+			items = append(items, node)
+		}
+	}
+	return items, nil
+}
+
+func GetAssetsByCreator(user string) ([]*Asset, error) {
+	var items = make([]*Asset, 0, 20)
+	def := new(time.Time)
+	filter := bson.M{"creator": user, "deleteAt": def}
 	cursor, err1 := findMany(TableAssets, filter, 0)
 	if err1 != nil {
 		return nil, err1

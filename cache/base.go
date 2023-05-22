@@ -13,7 +13,6 @@ import (
 )
 
 type cacheContext struct {
-
 }
 
 var cacheCtx *cacheContext
@@ -34,8 +33,35 @@ func Context() *cacheContext {
 	return cacheCtx
 }
 
-func (mine *cacheContext)GetThumb(uid string) *ThumbInfo {
-	db,_ := nosql.GetThumb(uid)
+func checkPage[T any](page, number uint32, all []T) (uint32, uint32, []T) {
+	if len(all) < 1 {
+		return 0, 0, make([]T, 0, 1)
+	}
+	if number < 1 {
+		number = 10
+	}
+	total := uint32(len(all))
+	if len(all) <= int(number) {
+		return total, 1, all
+	}
+	//array := reflect.ValueOf(all)
+	maxPage := total/number + 1
+	if page < 1 {
+		return total, maxPage, all
+	}
+
+	var start = (page - 1) * number
+	var end = start + number
+	if end > total {
+		end = total
+	}
+	list := make([]T, 0, number)
+	list = append(all[start:end])
+	return total, maxPage, list
+}
+
+func (mine *cacheContext) GetThumb(uid string) *ThumbInfo {
+	db, _ := nosql.GetThumb(uid)
 	if db != nil {
 		info := new(ThumbInfo)
 		info.initInfo(db)
@@ -45,7 +71,7 @@ func (mine *cacheContext)GetThumb(uid string) *ThumbInfo {
 }
 
 func (mine *cacheContext) GetThumbsByOwner(uid string) []*ThumbInfo {
-	array,err := nosql.GetThumbsByOwner(uid)
+	array, err := nosql.GetThumbsByOwner(uid)
 	if err == nil {
 		list := make([]*ThumbInfo, 0, len(array))
 		for _, item := range array {
@@ -54,30 +80,28 @@ func (mine *cacheContext) GetThumbsByOwner(uid string) []*ThumbInfo {
 			list = append(list, info)
 		}
 		return list
-	}else{
+	} else {
 		list := make([]*ThumbInfo, 0, 1)
 		return list
 	}
 }
 
-
-func (mine *cacheContext)GetUpToken(key string) string {
+func (mine *cacheContext) GetUpToken(key string) string {
 	cof := config.Schema.Storage
 	mac := auth.New(cof.AccessKey, cof.SecretKey)
 	// 设置上传凭证有效期
 	putPolicy := storage.PutPolicy{
-		Scope:      config.Schema.Storage.Bucket,
+		Scope: config.Schema.Storage.Bucket,
 		ReturnBody: `{"key":"$(key)","hash":"$(etag)","size":$(fsize),"type":"$(mimeType)", 
 		"img":$(imageInfo), "uuid":"$(uuid)", "bucket":"$(bucket)","name":"$(fname)"}`,
 	}
 	if len(key) > 2 {
-		putPolicy.Scope = config.Schema.Storage.Bucket+":"+key
+		putPolicy.Scope = config.Schema.Storage.Bucket + ":" + key
 	}
 	putPolicy.Expires = uint64(config.Schema.Storage.Expire) //有效期
 
 	return putPolicy.UploadToken(mac)
 }
-
 
 func RefreshCDN(url string) bool {
 	mac := qbox.NewMac(config.Schema.Storage.AccessKey, config.Schema.Storage.SecretKey)

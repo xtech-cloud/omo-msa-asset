@@ -110,6 +110,36 @@ func (mine *cacheContext) GetAssetsByOwner(uid string) []*AssetInfo {
 	return list
 }
 
+func (mine *cacheContext) GetAssetsByCreator(uid string) []*AssetInfo {
+	array, err := nosql.GetAssetsByCreator(uid)
+	if err != nil {
+		return make([]*AssetInfo, 0, 1)
+	}
+	list := make([]*AssetInfo, 0, len(array))
+	for _, asset := range array {
+		info := new(AssetInfo)
+		info.initInfo(asset)
+		list = append(list, info)
+	}
+	return list
+}
+
+func (mine *cacheContext) GetAssetsByException(page, number uint32) (uint32, uint32, []*AssetInfo) {
+	array, err := nosql.GetAllAssets()
+	if err != nil {
+		return 0, 0, make([]*AssetInfo, 0, 1)
+	}
+	list := make([]*AssetInfo, 0, len(array))
+	for _, asset := range array {
+		if asset.Creator == asset.Owner {
+			info := new(AssetInfo)
+			info.initInfo(asset)
+			list = append(list, info)
+		}
+	}
+	return checkPage(page, number, list)
+}
+
 func (mine *cacheContext) GetAssetsByLink(link string) []*AssetInfo {
 	array, err := nosql.GetAssetsByLink(link)
 	if err != nil {
