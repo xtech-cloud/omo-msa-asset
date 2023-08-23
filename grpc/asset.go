@@ -86,6 +86,8 @@ func (mine *AssetService) AddOne(ctx context.Context, in *pb.ReqAssetAdd, out *p
 	info.Snapshot = in.Snapshot
 	info.Width = in.Width
 	info.Height = in.Height
+	info.Meta = in.Meta
+	info.Remark = in.Remark
 	err := cache.Context().CreateAsset(info)
 	if err != nil {
 		out.Status = outError(path, err.Error(), pb.ResultStatus_DBException)

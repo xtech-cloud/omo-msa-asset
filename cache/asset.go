@@ -25,9 +25,10 @@ const (
 type AssetInfo struct {
 	Type     uint8
 	Status   uint8
-	Size     uint64
 	Width    uint32
 	Height   uint32
+	Weight   uint32
+	Size     uint64
 	ID       uint64 `json:"-"`
 	UID      string `json:"uid"`
 	Name     string `json:"name"`
@@ -42,11 +43,12 @@ type AssetInfo struct {
 	Format   string
 	MD5      string
 	Language string
+
 	// 快照，中图
 	Snapshot string
 	// 封面小图
-	Small      string
-	Weight     uint32
+	Small string
+
 	CreateTime time.Time
 	UpdateTime time.Time
 	Links      []string
@@ -60,7 +62,7 @@ func (mine *cacheContext) CreateAsset(info *AssetInfo) error {
 	db.Creator = info.Creator
 	db.Operator = info.Operator
 	db.Name = info.Name
-
+	db.Remark = info.Remark
 	db.Owner = info.Owner
 	db.Type = info.Type
 	db.Size = info.Size
