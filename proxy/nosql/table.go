@@ -8,12 +8,14 @@ const (
 
 	/**
 	头像
-	 */
+	*/
 	TableThumbs = "asset_thumbs"
+
+	//素材回收站
+	TableRecycles = "assets_recycle"
 
 	/**
 	数量自动增加
 	*/
 	TableSequence = "sequences"
-
 )

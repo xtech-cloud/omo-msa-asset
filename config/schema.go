@@ -8,22 +8,22 @@ type ServiceConfig struct {
 
 type LoggerConfig struct {
 	Level string `json:"level"`
-	File string `json:"file"`
-	Std bool `json:"std"`
+	File  string `json:"file"`
+	Std   bool   `json:"std"`
 }
 
 type DBConfig struct {
-	Type     string	`json:"type"`
-	User     string	`json:"user"`
-	Password string	`json:"password"`
-	IP      string	`json:"ip"`
-	Port     string	`json:"port"`
-	Name     string	`json:"name"`
+	Type     string `json:"type"`
+	User     string `json:"user"`
+	Password string `json:"password"`
+	IP       string `json:"ip"`
+	Port     string `json:"port"`
+	Name     string `json:"name"`
 }
 
 type BasicConfig struct {
-	SynonymMax     int `ini:"synonym"`
-	TagMax    int `ini:"tag"`
+	SynonymMax int `ini:"synonym"`
+	TagMax     int `ini:"tag"`
 }
 
 type StorageConfig struct {
@@ -35,8 +35,11 @@ type StorageConfig struct {
 	/**
 	token最大时效（秒）
 	*/
-	Expire int32  `json:"expire"`
+	Expire int32 `json:"expire"`
+	//CDN 域名
 	Domain string `json:"domain"`
+	//源域名
+	Source string `json:"source"`
 	// 公有库或者私有库
 	ACM int `json:"acm"`
 	// 私有地址的有效时间（秒）
@@ -50,6 +53,6 @@ type SchemaConfig struct {
 	Service  ServiceConfig `json:"service"`
 	Logger   LoggerConfig  `json:"logger"`
 	Database DBConfig      `json:"database"`
-	Basic   BasicConfig `json:"basic"`
-	Storage   StorageConfig `json:"storage"`
+	Basic    BasicConfig   `json:"basic"`
+	Storage  StorageConfig `json:"storage"`
 }

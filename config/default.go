@@ -13,7 +13,7 @@ const defaultJson string = `{
 	},
 	"database": {
 		"name": "rgsCloud",
-		"ip": "192.168.1.31",
+		"ip": "192.168.1.10",
 		"port": "27017",
 		"user": "root",
 		"password": "pass2019",
@@ -26,6 +26,7 @@ const defaultJson string = `{
 		"acm": 0,
 		"period": 600,
 		"domain": "http://testdown.suii.cn",
+		"source": "http://rdpup1.suii.cn",
 		"access": "4TDqfvaNHKxzx4nFz0YglS_jHlKXECCSSWb1vUr5",
 		"secret": "pZ8AnJE5IYgNRUFEB132ohIToJdRe5uxm4ZLLljp",
 		"bucket": "tec-test"

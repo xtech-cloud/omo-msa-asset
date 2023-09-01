@@ -40,6 +40,7 @@ func switchAsset(owner string, info *cache.AssetInfo) *pb.AssetInfo {
 	tmp.Weight = info.Weight
 	tmp.Status = uint32(info.Status)
 	tmp.Links = info.Links
+	tmp.Source = info.SourceURL()
 
 	thumbs, er := info.GetThumbs()
 	if er == nil {
@@ -145,6 +146,14 @@ func (mine *AssetService) GetList(ctx context.Context, in *pb.ReqAssetList, out 
 			out.List = append(out.List, switchAsset(info.Owner, info))
 		}
 	}
+	out.Status = outLog(path, fmt.Sprintf("the length = %d", len(out.List)))
+	return nil
+}
+
+func (mine *AssetService) GetStatistic(ctx context.Context, in *pb.RequestFilter, out *pb.ReplyStatistic) error {
+	path := "asset.getStatistic"
+	inLog(path, in)
+
 	out.Status = outLog(path, fmt.Sprintf("the length = %d", len(out.List)))
 	return nil
 }

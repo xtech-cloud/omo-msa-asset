@@ -201,17 +201,40 @@ func (mine *AssetInfo) GetThumbs() ([]*ThumbInfo, error) {
 }
 
 func (mine *AssetInfo) Remove(operator string) error {
-	err := nosql.RemoveAsset(mine.UID)
+	err := mine.ToRecycle(operator)
 	if err == nil {
-		_ = deleteContentFromCloud(mine.UUID)
-		if len(mine.Snapshot) > 2 {
-			_ = deleteContentFromCloud(mine.Snapshot)
-		}
-		if len(mine.Small) > 2 {
-			_ = deleteContentFromCloud(mine.Small)
-		}
+		_ = nosql.RemoveAsset(mine.UID)
 	}
 	return err
+}
+
+func (mine *AssetInfo) ToRecycle(operator string) error {
+	db := new(nosql.Recycle)
+	db.UID = primitive.NewObjectID()
+	db.ID = nosql.GetRecycleNextID()
+	db.CreatedTime = time.Now()
+	db.Creator = mine.Creator
+	db.Scavenger = operator
+	db.Operator = mine.Operator
+	db.Name = mine.Name
+	db.Remark = mine.Remark
+	db.Owner = mine.Owner
+	db.Type = mine.Type
+	db.Size = mine.Size
+	db.UUID = mine.UUID
+	db.Format = mine.Format
+	db.MD5 = mine.MD5
+	db.Version = mine.Version
+	db.Language = mine.Language
+	db.Snapshot = mine.Snapshot
+	db.Small = mine.Small
+	db.Width = mine.Width
+	db.Height = mine.Height
+	db.Meta = mine.Meta
+	db.Weight = mine.Weight
+	db.Status = mine.Status
+	db.Links = mine.Links
+	return nosql.CreateRecycle(db)
 }
 
 func (mine *AssetInfo) UpdateSnapshot(operator, snapshot string) error {
@@ -304,36 +327,46 @@ func (mine *AssetInfo) UpdateLanguage(lan, operator string) error {
 	return err
 }
 
-func (mine *AssetInfo) getURL(key string) string {
+func (mine *AssetInfo) getURL(key string, cdn bool) string {
 	if len(key) < 2 {
 		return ""
 	}
 	if strings.Contains(key, "http") {
 		return key
 	}
+	domain := config.Schema.Storage.Domain
+	if !cdn {
+		domain = config.Schema.Storage.Source
+	}
 	if config.Schema.Storage.Type == UP_QINIU {
 		if config.Schema.Storage.ACM > 0 {
 			mac := qbox.NewMac(config.Schema.Storage.AccessKey, config.Schema.Storage.SecretKey)
-			return storage.MakePrivateURL(mac, config.Schema.Storage.Domain, key, config.Schema.Storage.Period)
+			return storage.MakePrivateURL(mac, domain, key, config.Schema.Storage.Period)
 		} else {
-			return storage.MakePublicURL(config.Schema.Storage.Domain, key)
+			return storage.MakePublicURL(domain, key)
 		}
-
 	} else {
 		return mine.UID
 	}
 }
 
 func (mine *AssetInfo) URL() string {
-	return mine.getURL(mine.UUID)
+	return mine.getURL(mine.UUID, true)
+}
+
+func (mine *AssetInfo) SourceURL() string {
+	if mine.Snapshot != "" {
+		return mine.getURL(mine.Snapshot, false)
+	}
+	return mine.getURL(mine.UUID, false)
 }
 
 func (mine *AssetInfo) SnapshotURL() string {
-	return mine.getURL(mine.Snapshot)
+	return mine.getURL(mine.Snapshot, true)
 }
 
 func (mine *AssetInfo) SmallImageURL() string {
-	return mine.getURL(mine.Small)
+	return mine.getURL(mine.Small, false)
 }
 
 func (mine *AssetInfo) HadThumbByFace(face string) bool {
