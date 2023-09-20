@@ -74,6 +74,23 @@ func GetAsset(uid string) (*Asset, error) {
 	return model, nil
 }
 
+func GetAssetByKey(uid string) (*Asset, error) {
+	if len(uid) < 2 {
+		return nil, errors.New("db Asset uid is empty of GetAsset")
+	}
+	filter := bson.M{"uuid": uid}
+	result, err := findOneBy(TableAssets, filter)
+	if err != nil {
+		return nil, err
+	}
+	model := new(Asset)
+	err1 := result.Decode(&model)
+	if err1 != nil {
+		return nil, err1
+	}
+	return model, nil
+}
+
 func GetAllAssets() ([]*Asset, error) {
 	var items = make([]*Asset, 0, 20)
 	def := new(time.Time)

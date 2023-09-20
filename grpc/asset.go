@@ -102,11 +102,12 @@ func (mine *AssetService) AddOne(ctx context.Context, in *pb.ReqAssetAdd, out *p
 func (mine *AssetService) GetOne(ctx context.Context, in *pb.RequestInfo, out *pb.ReplyAssetOne) error {
 	path := "asset.getOne"
 	inLog(path, in)
+	var info *cache.AssetInfo
 	if len(in.Uid) < 1 {
-		out.Status = outError(path, "the asset is empty", pb.ResultStatus_Empty)
-		return nil
+		info = cache.Context().GetAssetByKey(in.Operator)
+	} else {
+		info = cache.Context().GetAsset(in.Uid)
 	}
-	info := cache.Context().GetAsset(in.Uid)
 	if info == nil {
 		out.Status = outError(path, "the asset not found", pb.ResultStatus_NotExisted)
 		return nil

@@ -98,6 +98,16 @@ func (mine *cacheContext) GetAsset(uid string) *AssetInfo {
 	return nil
 }
 
+func (mine *cacheContext) GetAssetByKey(key string) *AssetInfo {
+	db, err := nosql.GetAssetByKey(key)
+	if err == nil {
+		info := new(AssetInfo)
+		info.initInfo(db)
+		return info
+	}
+	return nil
+}
+
 func (mine *cacheContext) GetAssetsByOwner(uid string) []*AssetInfo {
 	array, err := nosql.GetAssetsByOwner(uid)
 	if err != nil {
