@@ -29,6 +29,7 @@ type AssetInfo struct {
 	Height   uint32
 	Weight   uint32
 	Size     uint64
+	Code     int    //状态码
 	ID       uint64 `json:"-"`
 	UID      string `json:"uid"`
 	Name     string `json:"name"`
@@ -79,11 +80,13 @@ func (mine *cacheContext) CreateAsset(info *AssetInfo) error {
 	db.Weight = 0
 	db.Status = StatusIdle
 	db.Links = info.Links
+
 	err := nosql.CreateAsset(db)
 	if err == nil {
 		info.UID = db.UID.Hex()
 		info.ID = db.ID
 		info.CreateTime = db.CreatedTime
+		go validateAsset(info.UID, info.getMinURL())
 	}
 	return err
 }
@@ -216,6 +219,14 @@ func (mine *AssetInfo) Remove(operator string) error {
 		_ = nosql.RemoveAsset(mine.UID)
 	}
 	return err
+}
+
+func (mine *AssetInfo) getMinURL() string {
+	if mine.Snapshot != "" {
+		return mine.getURL(mine.Snapshot, true)
+	} else {
+		return mine.getURL(mine.UUID, true)
+	}
 }
 
 func (mine *AssetInfo) ToRecycle(operator string) error {

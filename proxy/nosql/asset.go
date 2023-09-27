@@ -20,6 +20,7 @@ type Asset struct {
 
 	Status   uint8    `json:"status" bson:"status"`
 	Type     uint8    `json:"type" bson:"type"`
+	Code     int      `json:"code" bson:"code"`
 	Owner    string   `json:"owner" bson:"owner"`
 	Size     uint64   `json:"size" bson:"size"`
 	UUID     string   `json:"uuid" bson:"uuid"`
@@ -112,7 +113,7 @@ func GetAllAssets() ([]*Asset, error) {
 
 func UpdateAssetSnapshot(uid, snapshot, operator string) error {
 	if len(uid) < 2 {
-		return errors.New("db asset uid is empty of GetAsset")
+		return errors.New("db asset uid is empty of UpdateAssetSnapshot")
 	}
 
 	msg := bson.M{"snapshot": snapshot, "operator": operator, "updatedAt": time.Now()}
@@ -122,10 +123,20 @@ func UpdateAssetSnapshot(uid, snapshot, operator string) error {
 
 func UpdateAssetSmall(uid, small, operator string) error {
 	if len(uid) < 2 {
-		return errors.New("db asset uid is empty of GetAsset")
+		return errors.New("db asset uid is empty of UpdateAssetSmall")
 	}
 
 	msg := bson.M{"small": small, "operator": operator, "updatedAt": time.Now()}
+	_, err := updateOne(TableAssets, uid, msg)
+	return err
+}
+
+func UpdateAssetCode(uid string, code int) error {
+	if len(uid) < 2 {
+		return errors.New("db asset uid is empty of UpdateAssetCode")
+	}
+
+	msg := bson.M{"code": code, "updatedAt": time.Now()}
 	_, err := updateOne(TableAssets, uid, msg)
 	return err
 }

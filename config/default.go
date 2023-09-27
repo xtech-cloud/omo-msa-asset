@@ -31,6 +31,11 @@ const defaultJson string = `{
 		"secret": "pZ8AnJE5IYgNRUFEB132ohIToJdRe5uxm4ZLLljp",
 		"bucket": "tec-test"
 	},
+	"examine":{
+		"type":"baidu",
+		"access":"tNEOCTXw0j6wQCGgIEOj54f6",
+		"secret":"1w5pDR2bqDf0vgmHUCYqd8YPoACw6d25"
+	},
 	"basic": {
 		"synonym": 6,
 		"tag": 6

@@ -5,6 +5,7 @@ go 1.18
 replace google.golang.org/grpc => github.com/grpc/grpc-go v1.26.0
 
 require (
+	github.com/Baidu-AIP/golang-sdk v1.1.1
 	github.com/labstack/gommon v0.3.0
 	github.com/micro/go-micro/v2 v2.9.1
 	github.com/micro/go-plugins/config/source/consul/v2 v2.9.1

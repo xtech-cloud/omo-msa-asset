@@ -49,10 +49,17 @@ type StorageConfig struct {
 	SecretKey string `json:"secret"`
 }
 
+type ExamineConfig struct {
+	Type      string `json:"type"`
+	AccessKey string `json:"access"`
+	SecretKey string `json:"secret"`
+}
+
 type SchemaConfig struct {
 	Service  ServiceConfig `json:"service"`
 	Logger   LoggerConfig  `json:"logger"`
 	Database DBConfig      `json:"database"`
 	Basic    BasicConfig   `json:"basic"`
 	Storage  StorageConfig `json:"storage"`
+	Examine  ExamineConfig `json:"examine"`
 }
