@@ -197,6 +197,11 @@ func (mine *AssetInfo) initInfo(db *nosql.Asset) {
 	mine.Weight = db.Weight
 	mine.Status = db.Status
 	mine.Links = db.Links
+	mine.Code = db.Code
+	if mine.Code < 1 {
+		go validateAsset(mine.UID, mine.getMinURL())
+	}
+
 }
 
 func (mine *AssetInfo) GetThumbs() ([]*ThumbInfo, error) {
