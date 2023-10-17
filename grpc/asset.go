@@ -167,6 +167,13 @@ func (mine *AssetService) GetByFilter(ctx context.Context, in *pb.RequestFilter,
 		list = cache.Context().GetAssetsByLink(in.Key)
 	} else if in.Key == "creator" {
 		list = cache.Context().GetAssetsByCreator(in.Value)
+	} else if in.Key == "type" {
+		tp, err := strconv.Atoi(in.Value)
+		if err != nil {
+			out.Status = outError(path, err.Error(), pb.ResultStatus_DBException)
+			return nil
+		}
+		list = cache.Context().GetAssetsByType(tp)
 	}
 	out.List = make([]*pb.AssetInfo, 0, len(list))
 	for _, info := range list {

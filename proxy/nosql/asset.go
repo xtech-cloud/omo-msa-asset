@@ -240,6 +240,25 @@ func GetAssetsByOwner(owner string) ([]*Asset, error) {
 	return items, nil
 }
 
+func GetAssetsByType(tp uint8) ([]*Asset, error) {
+	var items = make([]*Asset, 0, 20)
+	def := new(time.Time)
+	filter := bson.M{"type": tp, "deleteAt": def}
+	cursor, err1 := findMany(TableAssets, filter, 0)
+	if err1 != nil {
+		return nil, err1
+	}
+	for cursor.Next(context.Background()) {
+		var node = new(Asset)
+		if err := cursor.Decode(&node); err != nil {
+			return nil, err
+		} else {
+			items = append(items, node)
+		}
+	}
+	return items, nil
+}
+
 func GetAssetsByCreator(user string) ([]*Asset, error) {
 	var items = make([]*Asset, 0, 20)
 	def := new(time.Time)

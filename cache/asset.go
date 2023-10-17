@@ -11,8 +11,13 @@ import (
 )
 
 const (
-	OwnerTypePerson = 1
-	OwnerTypeUnit   = 0
+	AssetTypePerson       = 0
+	AssetTypeGroup        = 1 //组织
+	AssetTypeWindowModel  = 2 //windows 平台模型
+	AssetTypeAndroidModel = 3 //android 平台模型
+	AssetTypeAudio        = 4
+	AssetTypeVideo        = 5
+	AssetTypePortrait     = 6 //系统头像
 )
 
 const UP_QINIU = "qiniu"
@@ -113,6 +118,20 @@ func (mine *cacheContext) GetAssetByKey(key string) *AssetInfo {
 
 func (mine *cacheContext) GetAssetsByOwner(uid string) []*AssetInfo {
 	array, err := nosql.GetAssetsByOwner(uid)
+	if err != nil {
+		return make([]*AssetInfo, 0, 1)
+	}
+	list := make([]*AssetInfo, 0, len(array))
+	for _, asset := range array {
+		info := new(AssetInfo)
+		info.initInfo(asset)
+		list = append(list, info)
+	}
+	return list
+}
+
+func (mine *cacheContext) GetAssetsByType(tp int) []*AssetInfo {
+	array, err := nosql.GetAssetsByType(uint8(tp))
 	if err != nil {
 		return make([]*AssetInfo, 0, 1)
 	}
