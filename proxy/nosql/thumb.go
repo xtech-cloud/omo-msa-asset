@@ -15,16 +15,19 @@ type Thumb struct {
 	CreatedTime time.Time          `json:"createdAt" bson:"createdAt"`
 	UpdatedTime time.Time          `json:"updatedAt" bson:"updatedAt"`
 	DeleteTime  time.Time          `json:"deleteAt" bson:"deleteAt"`
+	Created     int64              `json:"created" bson:"created"`
+	Updated     int64              `json:"updated" bson:"updated"`
+	Deleted     int64              `json:"deleted" bson:"deleted"`
 	Creator     string             `json:"creator" bson:"creator"`
 	Operator    string             `json:"operator" bson:"operator"`
 
-	Owner string `json:"owner" bson:"owner"`
-	FaceID string `json:"face" bson:"face"`
+	Owner    string  `json:"owner" bson:"owner"`
+	FaceID   string  `json:"face" bson:"face"`
 	Probably float32 `json:"probably" bson:"probably"`
-	Blur float32 `json:"blur" bson:"blur"`
-	URL string `json:"url" bson:"url"`
-	Asset string `json:"asset" bson:"asset"`
-	Similar float32 `json:"similar" bson:"similar"`
+	Blur     float32 `json:"blur" bson:"blur"`
+	URL      string  `json:"url" bson:"url"`
+	Asset    string  `json:"asset" bson:"asset"`
+	Similar  float32 `json:"similar" bson:"similar"`
 }
 
 func CreateThumb(info *Thumb) error {
@@ -131,4 +134,3 @@ func UpdateThumbBase(uid, owner string, similar float32) error {
 	_, err := updateOne(TableAssets, uid, msg)
 	return err
 }
-

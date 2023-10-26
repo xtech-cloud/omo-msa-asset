@@ -55,16 +55,16 @@ type AssetInfo struct {
 	// 封面小图
 	Small string
 
-	CreateTime time.Time
-	UpdateTime time.Time
-	Links      []string
+	Created int64
+	Updated int64
+	Links   []string
 }
 
 func (mine *cacheContext) CreateAsset(info *AssetInfo) error {
 	db := new(nosql.Asset)
 	db.UID = primitive.NewObjectID()
 	db.ID = nosql.GetAssetNextID()
-	db.CreatedTime = time.Now()
+	db.Created = time.Now().Unix()
 	db.Creator = info.Creator
 	db.Operator = info.Operator
 	db.Name = info.Name
@@ -90,7 +90,7 @@ func (mine *cacheContext) CreateAsset(info *AssetInfo) error {
 	if err == nil {
 		info.UID = db.UID.Hex()
 		info.ID = db.ID
-		info.CreateTime = db.CreatedTime
+		info.Created = db.Created
 		go validateAsset(info.UID, info.getMinURL())
 	}
 	return err
@@ -132,6 +132,20 @@ func (mine *cacheContext) GetAssetsByOwner(uid string) []*AssetInfo {
 
 func (mine *cacheContext) GetAssetsByType(tp int) []*AssetInfo {
 	array, err := nosql.GetAssetsByType(uint8(tp))
+	if err != nil {
+		return make([]*AssetInfo, 0, 1)
+	}
+	list := make([]*AssetInfo, 0, len(array))
+	for _, asset := range array {
+		info := new(AssetInfo)
+		info.initInfo(asset)
+		list = append(list, info)
+	}
+	return list
+}
+
+func (mine *cacheContext) GetAssetsByRegex(key string, from, to int64) []*AssetInfo {
+	array, err := nosql.GetAssetsByRegex(key, from, to)
 	if err != nil {
 		return make([]*AssetInfo, 0, 1)
 	}
@@ -191,8 +205,8 @@ func (mine *cacheContext) GetAssetsByLink(link string) []*AssetInfo {
 func (mine *AssetInfo) initInfo(db *nosql.Asset) {
 	mine.UID = db.UID.Hex()
 	mine.ID = db.ID
-	mine.CreateTime = db.CreatedTime
-	mine.UpdateTime = db.UpdatedTime
+	mine.Created = db.Created
+	mine.Updated = db.Updated
 	mine.Creator = db.Creator
 	mine.Operator = db.Operator
 	mine.Name = db.Name
@@ -257,7 +271,7 @@ func (mine *AssetInfo) ToRecycle(operator string) error {
 	db := new(nosql.Recycle)
 	db.UID = primitive.NewObjectID()
 	db.ID = nosql.GetRecycleNextID()
-	db.CreatedTime = time.Now()
+	db.Created = time.Now().Unix()
 	db.Creator = mine.Creator
 	db.Scavenger = operator
 	db.Operator = mine.Operator
@@ -465,7 +479,7 @@ func (mine *AssetInfo) CreateThumb(face, url, operator, owner string, score, sim
 	db := new(nosql.Thumb)
 	db.UID = primitive.NewObjectID()
 	db.ID = nosql.GetThumbNextID()
-	db.CreatedTime = time.Now()
+	db.Created = time.Now().Unix()
 	db.Creator = operator
 	db.Operator = operator
 	db.FaceID = face

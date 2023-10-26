@@ -7,13 +7,13 @@ import (
 	"omo.msa.asset/cache"
 )
 
-type ThumbService struct {}
+type ThumbService struct{}
 
 func switchThumb(info *cache.ThumbInfo) *pb.ThumbInfo {
 	tmp := new(pb.ThumbInfo)
 	tmp.Uid = info.UID
-	tmp.Updated = info.UpdateTime.Unix()
-	tmp.Created = info.CreateTime.Unix()
+	tmp.Updated = info.Updated
+	tmp.Created = info.Created
 	tmp.Creator = info.Creator
 	tmp.Operator = info.Operator
 
@@ -27,7 +27,7 @@ func switchThumb(info *cache.ThumbInfo) *pb.ThumbInfo {
 	return tmp
 }
 
-func (mine *ThumbService)AddOne(ctx context.Context, in *pb.ReqThumbAdd, out *pb.ReplyThumbOne) error {
+func (mine *ThumbService) AddOne(ctx context.Context, in *pb.ReqThumbAdd, out *pb.ReplyThumbOne) error {
 	path := "thumb.addOne"
 	inLog(path, in)
 	if len(in.Asset) < 1 {
@@ -44,7 +44,7 @@ func (mine *ThumbService)AddOne(ctx context.Context, in *pb.ReqThumbAdd, out *pb
 		out.Status = outError(path, "the face repeated", pb.ResultStatus_Repeated)
 		return nil
 	}
-	info,err := asset.CreateThumb(in.Face, in.Url, in.Operator, in.Owner, in.Probably, in.Similar, in.Blur)
+	info, err := asset.CreateThumb(in.Face, in.Url, in.Operator, in.Owner, in.Probably, in.Similar, in.Blur)
 	if err != nil {
 		out.Status = outError(path, err.Error(), pb.ResultStatus_DBException)
 		return nil
@@ -54,7 +54,7 @@ func (mine *ThumbService)AddOne(ctx context.Context, in *pb.ReqThumbAdd, out *pb
 	return nil
 }
 
-func (mine *ThumbService)GetOne(ctx context.Context, in *pb.RequestInfo, out *pb.ReplyThumbOne) error {
+func (mine *ThumbService) GetOne(ctx context.Context, in *pb.RequestInfo, out *pb.ReplyThumbOne) error {
 	path := "thumb.getOne"
 	inLog(path, in)
 	if len(in.Uid) < 1 {
@@ -69,7 +69,7 @@ func (mine *ThumbService)GetOne(ctx context.Context, in *pb.RequestInfo, out *pb
 			return nil
 		}
 		thumb = asset.GetThumb(in.Uid)
-	}else{
+	} else {
 		thumb = cache.Context().GetThumb(in.Uid)
 	}
 	if thumb == nil {
@@ -81,7 +81,7 @@ func (mine *ThumbService)GetOne(ctx context.Context, in *pb.RequestInfo, out *pb
 	return nil
 }
 
-func (mine *ThumbService)RemoveOne(ctx context.Context, in *pb.RequestInfo, out *pb.ReplyInfo) error {
+func (mine *ThumbService) RemoveOne(ctx context.Context, in *pb.RequestInfo, out *pb.ReplyInfo) error {
 	path := "thumb.removeOne"
 	inLog(path, in)
 	if len(in.Uid) < 1 {
@@ -106,7 +106,7 @@ func (mine *ThumbService)RemoveOne(ctx context.Context, in *pb.RequestInfo, out 
 	return nil
 }
 
-func (mine *ThumbService)GetList(ctx context.Context, in *pb.ReqThumbList, out *pb.ReplyThumbList) error {
+func (mine *ThumbService) GetList(ctx context.Context, in *pb.ReqThumbList, out *pb.ReplyThumbList) error {
 	path := "thumb.getList"
 	inLog(path, in)
 	if len(in.Asset) < 1 {
@@ -118,7 +118,7 @@ func (mine *ThumbService)GetList(ctx context.Context, in *pb.ReqThumbList, out *
 		out.Status = outError(path, "the asset not found", pb.ResultStatus_NotExisted)
 		return nil
 	}
-	array,err := asset.GetThumbs()
+	array, err := asset.GetThumbs()
 	if err != nil {
 		out.Status = outError(path, err.Error(), pb.ResultStatus_DBException)
 		return nil
@@ -131,7 +131,7 @@ func (mine *ThumbService)GetList(ctx context.Context, in *pb.ReqThumbList, out *
 	return nil
 }
 
-func (mine *ThumbService)GetByOwner(ctx context.Context, in *pb.RequestInfo, out *pb.ReplyThumbList) error {
+func (mine *ThumbService) GetByOwner(ctx context.Context, in *pb.RequestInfo, out *pb.ReplyThumbList) error {
 	path := "thumb.getByOwner"
 	inLog(path, in)
 	if len(in.Owner) < 1 {
@@ -148,7 +148,7 @@ func (mine *ThumbService)GetByOwner(ctx context.Context, in *pb.RequestInfo, out
 	return nil
 }
 
-func (mine *ThumbService)UpdateBase(ctx context.Context, in *pb.ReqThumbUpdate, out *pb.ReplyThumbOne) error {
+func (mine *ThumbService) UpdateBase(ctx context.Context, in *pb.ReqThumbUpdate, out *pb.ReplyThumbOne) error {
 	path := "thumb.updateBase"
 	inLog(path, in)
 	if len(in.Uid) < 1 {
@@ -164,7 +164,7 @@ func (mine *ThumbService)UpdateBase(ctx context.Context, in *pb.ReqThumbUpdate, 
 			return nil
 		}
 		thumb = asset.GetThumb(in.Uid)
-	}else{
+	} else {
 		thumb = cache.Context().GetThumb(in.Uid)
 	}
 	if thumb == nil {
@@ -180,4 +180,3 @@ func (mine *ThumbService)UpdateBase(ctx context.Context, in *pb.ReqThumbUpdate, 
 	out.Status = outLog(path, out)
 	return nil
 }
-

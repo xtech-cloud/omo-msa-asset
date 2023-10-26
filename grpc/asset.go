@@ -18,8 +18,8 @@ func switchAsset(owner string, info *cache.AssetInfo) *pb.AssetInfo {
 	tmp.Name = info.Name
 	tmp.Remark = info.Remark
 	tmp.Meta = info.Meta
-	tmp.Updated = info.UpdateTime.Unix()
-	tmp.Created = info.CreateTime.Unix()
+	tmp.Updated = info.Updated
+	tmp.Created = info.Created
 	tmp.Creator = info.Creator
 	tmp.Operator = info.Operator
 	if info.Owner != owner {
@@ -174,6 +174,10 @@ func (mine *AssetService) GetByFilter(ctx context.Context, in *pb.RequestFilter,
 			return nil
 		}
 		list = cache.Context().GetAssetsByType(tp)
+	} else if in.Key == "regex" {
+		if len(in.Numbers) == 2 {
+			list = cache.Context().GetAssetsByRegex(in.Value, in.Numbers[0], in.Numbers[1])
+		}
 	}
 	out.List = make([]*pb.AssetInfo, 0, len(list))
 	for _, info := range list {

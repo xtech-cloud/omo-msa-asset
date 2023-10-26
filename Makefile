@@ -42,3 +42,7 @@ updev:
 .PHONY: upload
 upload:
 	scp -P 9099 dist/${APP_NAME}-${BUILD_VERSION}.tar.gz root@47.93.209.105:/root/
+
+.PHONY: upload2
+upload:
+	scp -P 9099 dist/${APP_NAME}-${BUILD_VERSION}.tar.gz root@101.200.166.80:/root/

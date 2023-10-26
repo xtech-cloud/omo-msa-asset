@@ -14,6 +14,8 @@ type Recycle struct {
 	Name        string             `json:"name" bson:"name"`
 	CreatedTime time.Time          `json:"createdAt" bson:"createdAt"`
 	DeleteTime  time.Time          `json:"deleteAt" bson:"deleteAt"`
+	Created     int64              `json:"created" bson:"created"`
+	Deleted     int64              `json:"deleted" bson:"deleted"`
 	Creator     string             `json:"creator" bson:"creator"`
 	Operator    string             `json:"operator" bson:"operator"`
 

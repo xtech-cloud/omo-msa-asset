@@ -103,6 +103,24 @@ func checkConnected() bool {
 	return true
 }
 
+func CheckTimes() {
+	dbs := make([]*Asset, 0, 50000)
+	dbs = GetAll(TableAssets, dbs)
+	for _, db := range dbs {
+		UpdateItemTime(TableAssets, db.UID.Hex(), db.CreatedTime, db.UpdatedTime, db.DeleteTime)
+	}
+	dbs1 := make([]*Thumb, 0, 5000)
+	dbs1 = GetAll(TableThumbs, dbs1)
+	for _, db := range dbs1 {
+		UpdateItemTime(TableThumbs, db.UID.Hex(), db.CreatedTime, db.UpdatedTime, db.DeleteTime)
+	}
+	dbs2 := make([]*Recycle, 0, 5000)
+	dbs2 = GetAll(TableRecycles, dbs2)
+	for _, db := range dbs2 {
+		UpdateItemTime(TableRecycles, db.UID.Hex(), db.CreatedTime, db.DeleteTime, db.DeleteTime)
+	}
+}
+
 func analyticDataStructure(table string, data []gjson.Result) error {
 	return nil
 }
@@ -139,31 +157,6 @@ func readFile(path string, table string) error {
 	data := result.Array()
 
 	return analyticDataStructure(table, data)
-}
-
-func BackupDatabase() string {
-	/*timeStr := time.Now().Format("20060102150405")
-	path := "db/"+timeStr+"/"
-	bl := tool.FileIsExist(path)
-	if !bl {
-		err := os.MkdirAll(path, 0666)
-		if err != nil {
-			warn("backup database failed!!!")
-		}
-	}
-
-	tables, _ := noSql.ListCollectionNames(context.Background(), nil)
-	for i := 0; i < len(tables); i++ {
-		if tables[i] == TableAdmin {
-			//cursor,_ := findAll(TableAdmin)
-			//writeFile(path,tables[i],cursor.)
-		}else if tables[i] == TableScene {
-
-			//writeFile(path,tables[i],list)
-		}
-	}
-	return timeStr*/
-	return ""
 }
 
 func ImportDatabase(table string, file multipart.File) error {

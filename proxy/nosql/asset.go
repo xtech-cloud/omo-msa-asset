@@ -15,6 +15,9 @@ type Asset struct {
 	CreatedTime time.Time          `json:"createdAt" bson:"createdAt"`
 	UpdatedTime time.Time          `json:"updatedAt" bson:"updatedAt"`
 	DeleteTime  time.Time          `json:"deleteAt" bson:"deleteAt"`
+	Created     int64              `json:"created" bson:"created"`
+	Updated     int64              `json:"updated" bson:"updated"`
+	Deleted     int64              `json:"deleted" bson:"deleted"`
 	Creator     string             `json:"creator" bson:"creator"`
 	Operator    string             `json:"operator" bson:"operator"`
 
@@ -94,9 +97,7 @@ func GetAssetByKey(uid string) (*Asset, error) {
 
 func GetAllAssets() ([]*Asset, error) {
 	var items = make([]*Asset, 0, 20)
-	def := new(time.Time)
-	filter := bson.M{"deleteAt": def}
-	cursor, err1 := findMany(TableAssets, filter, 0)
+	cursor, err1 := findAllEnable(TableAssets, 0)
 	if err1 != nil {
 		return nil, err1
 	}
@@ -116,7 +117,7 @@ func UpdateAssetSnapshot(uid, snapshot, operator string) error {
 		return errors.New("db asset uid is empty of UpdateAssetSnapshot")
 	}
 
-	msg := bson.M{"snapshot": snapshot, "operator": operator, "updatedAt": time.Now()}
+	msg := bson.M{"snapshot": snapshot, "operator": operator, TimeUpdated: time.Now().Unix()}
 	_, err := updateOne(TableAssets, uid, msg)
 	return err
 }
@@ -126,7 +127,7 @@ func UpdateAssetSmall(uid, small, operator string) error {
 		return errors.New("db asset uid is empty of UpdateAssetSmall")
 	}
 
-	msg := bson.M{"small": small, "operator": operator, "updatedAt": time.Now()}
+	msg := bson.M{"small": small, "operator": operator, TimeUpdated: time.Now().Unix()}
 	_, err := updateOne(TableAssets, uid, msg)
 	return err
 }
@@ -136,7 +137,7 @@ func UpdateAssetCode(uid string, code int) error {
 		return errors.New("db asset uid is empty of UpdateAssetCode")
 	}
 
-	msg := bson.M{"code": code, "updatedAt": time.Now()}
+	msg := bson.M{"code": code, TimeUpdated: time.Now().Unix()}
 	_, err := updateOne(TableAssets, uid, msg)
 	return err
 }
@@ -146,7 +147,7 @@ func UpdateAssetBase(uid, name, remark, operator string) error {
 		return errors.New("db asset uid is empty of UpdateAssetBase")
 	}
 
-	msg := bson.M{"name": name, "remark": remark, "operator": operator, "updatedAt": time.Now()}
+	msg := bson.M{"name": name, "remark": remark, "operator": operator, TimeUpdated: time.Now().Unix()}
 	_, err := updateOne(TableAssets, uid, msg)
 	return err
 }
@@ -156,7 +157,7 @@ func UpdateAssetMeta(uid, meta, operator string) error {
 		return errors.New("db asset uid is empty of UpdateAssetMeta")
 	}
 
-	msg := bson.M{"meta": meta, "operator": operator, "updatedAt": time.Now()}
+	msg := bson.M{"meta": meta, "operator": operator, TimeUpdated: time.Now().Unix()}
 	_, err := updateOne(TableAssets, uid, msg)
 	return err
 }
@@ -166,7 +167,7 @@ func UpdateAssetWeight(uid, operator string, weight uint32) error {
 		return errors.New("db asset uid is empty of UpdateAssetWeight")
 	}
 
-	msg := bson.M{"weight": weight, "operator": operator, "updatedAt": time.Now()}
+	msg := bson.M{"weight": weight, "operator": operator, TimeUpdated: time.Now().Unix()}
 	_, err := updateOne(TableAssets, uid, msg)
 	return err
 }
@@ -176,7 +177,7 @@ func UpdateAssetStatus(uid, operator string, status uint8) error {
 		return errors.New("db asset uid is empty of UpdateAssetWeight")
 	}
 
-	msg := bson.M{"status": status, "operator": operator, "updatedAt": time.Now()}
+	msg := bson.M{"status": status, "operator": operator, TimeUpdated: time.Now().Unix()}
 	_, err := updateOne(TableAssets, uid, msg)
 	return err
 }
@@ -186,7 +187,7 @@ func UpdateAssetLinks(uid, operator string, arr []string) error {
 		return errors.New("db asset uid is empty of UpdateAssetWeight")
 	}
 
-	msg := bson.M{"links": arr, "operator": operator, "updatedAt": time.Now()}
+	msg := bson.M{"links": arr, "operator": operator, TimeUpdated: time.Now().Unix()}
 	_, err := updateOne(TableAssets, uid, msg)
 	return err
 }
@@ -196,7 +197,7 @@ func UpdateAssetType(uid, operator string, tp uint8) error {
 		return errors.New("db asset uid is empty of UpdateAssetType")
 	}
 
-	msg := bson.M{"type": tp, "operator": operator, "updatedAt": time.Now()}
+	msg := bson.M{"type": tp, "operator": operator, TimeUpdated: time.Now().Unix()}
 	_, err := updateOne(TableAssets, uid, msg)
 	return err
 }
@@ -206,7 +207,7 @@ func UpdateAssetOwner(uid, owner, operator string) error {
 		return errors.New("db asset uid is empty of UpdateAssetType")
 	}
 
-	msg := bson.M{"owner": owner, "operator": operator, "updatedAt": time.Now()}
+	msg := bson.M{"owner": owner, "operator": operator, TimeUpdated: time.Now().Unix()}
 	_, err := updateOne(TableAssets, uid, msg)
 	return err
 }
@@ -216,15 +217,32 @@ func UpdateAssetLanguage(uid, operator, lan string) error {
 		return errors.New("db asset uid is empty of UpdateAssetLanguage")
 	}
 
-	msg := bson.M{"language": lan, "operator": operator, "updatedAt": time.Now()}
+	msg := bson.M{"language": lan, "operator": operator, TimeUpdated: time.Now().Unix()}
 	_, err := updateOne(TableAssets, uid, msg)
 	return err
 }
 
 func GetAssetsByOwner(owner string) ([]*Asset, error) {
 	var items = make([]*Asset, 0, 20)
-	def := new(time.Time)
-	filter := bson.M{"owner": owner, "deleteAt": def}
+	filter := bson.M{"owner": owner, TimeDeleted: 0}
+	cursor, err1 := findMany(TableAssets, filter, 0)
+	if err1 != nil {
+		return nil, err1
+	}
+	for cursor.Next(context.Background()) {
+		var node = new(Asset)
+		if err := cursor.Decode(&node); err != nil {
+			return nil, err
+		} else {
+			items = append(items, node)
+		}
+	}
+	return items, nil
+}
+
+func GetAssetsByRegex(key string, from, to int64) ([]*Asset, error) {
+	var items = make([]*Asset, 0, 20)
+	filter := bson.M{"name": bson.M{"$regex": key}, TimeCreated: bson.M{"$gt": from, "$lt": to}, TimeDeleted: 0}
 	cursor, err1 := findMany(TableAssets, filter, 0)
 	if err1 != nil {
 		return nil, err1
@@ -242,8 +260,7 @@ func GetAssetsByOwner(owner string) ([]*Asset, error) {
 
 func GetAssetsByType(tp uint8) ([]*Asset, error) {
 	var items = make([]*Asset, 0, 20)
-	def := new(time.Time)
-	filter := bson.M{"type": tp, "deleteAt": def}
+	filter := bson.M{"type": tp, TimeDeleted: 0}
 	cursor, err1 := findMany(TableAssets, filter, 0)
 	if err1 != nil {
 		return nil, err1
@@ -261,8 +278,7 @@ func GetAssetsByType(tp uint8) ([]*Asset, error) {
 
 func GetAssetsByCreator(user string) ([]*Asset, error) {
 	var items = make([]*Asset, 0, 20)
-	def := new(time.Time)
-	filter := bson.M{"creator": user, "deleteAt": def}
+	filter := bson.M{"creator": user, TimeDeleted: 0}
 	cursor, err1 := findMany(TableAssets, filter, 0)
 	if err1 != nil {
 		return nil, err1
@@ -280,8 +296,7 @@ func GetAssetsByCreator(user string) ([]*Asset, error) {
 
 func GetAssetsByLink(link string) ([]*Asset, error) {
 	var items = make([]*Asset, 0, 20)
-	def := new(time.Time)
-	filter := bson.M{"links": link, "deleteAt": def}
+	filter := bson.M{"links": link, TimeDeleted: 0}
 	cursor, err1 := findMany(TableAssets, filter, 0)
 	if err1 != nil {
 		return nil, err1

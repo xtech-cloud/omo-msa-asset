@@ -38,16 +38,16 @@ type RecycleInfo struct {
 	// 封面小图
 	Small string
 
-	CreateTime time.Time
-	UpdateTime time.Time
-	Links      []string
+	Created int64
+	Updated int64
+	Links   []string
 }
 
 func (mine *cacheContext) CreateRecycle(info *RecycleInfo) error {
 	db := new(nosql.Recycle)
 	db.UID = primitive.NewObjectID()
 	db.ID = nosql.GetRecycleNextID()
-	db.CreatedTime = time.Now()
+	db.Created = time.Now().Unix()
 	db.Creator = info.Creator
 	db.Operator = info.Operator
 	db.Name = info.Name
@@ -72,7 +72,7 @@ func (mine *cacheContext) CreateRecycle(info *RecycleInfo) error {
 	if err == nil {
 		info.UID = db.UID.Hex()
 		info.ID = db.ID
-		info.CreateTime = db.CreatedTime
+		info.Created = db.Created
 	}
 	return err
 }
@@ -134,7 +134,7 @@ func (mine *cacheContext) GetRecyclesByException(page, number uint32) (uint32, u
 func (mine *RecycleInfo) initInfo(db *nosql.Recycle) {
 	mine.UID = db.UID.Hex()
 	mine.ID = db.ID
-	mine.CreateTime = db.CreatedTime
+	mine.Created = db.Created
 	mine.Scavenger = db.Scavenger
 	mine.Creator = db.Creator
 	mine.Operator = db.Operator
