@@ -25,7 +25,7 @@ func InitData() error {
 		num := nosql.GetAssetCount()
 		count := nosql.GetThumbCount()
 		logger.Infof("the asset count = %d and the thumb count = %d", num, count)
-		nosql.CheckTimes()
+		//nosql.CheckTimes()
 	}
 	return err
 }

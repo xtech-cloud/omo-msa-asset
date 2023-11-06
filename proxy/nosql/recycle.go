@@ -36,6 +36,7 @@ type Recycle struct {
 	Weight    uint32   `json:"weight" bson:"weight"`
 	Width     uint32   `json:"width" bson:"width"`
 	Height    uint32   `json:"height" bson:"height"`
+	Quote     string   `json:"quote" bson:"quote"`
 	Links     []string `json:"links" bson:"links"`
 }
 

@@ -38,6 +38,7 @@ type Asset struct {
 	Weight   uint32   `json:"weight" bson:"weight"`
 	Width    uint32   `json:"width" bson:"width"`
 	Height   uint32   `json:"height" bson:"height"`
+	Quote    string   `json:"quote" bson:"quote"`
 	Links    []string `json:"links" bson:"links"`
 }
 
@@ -208,6 +209,16 @@ func UpdateAssetOwner(uid, owner, operator string) error {
 	}
 
 	msg := bson.M{"owner": owner, "operator": operator, TimeUpdated: time.Now().Unix()}
+	_, err := updateOne(TableAssets, uid, msg)
+	return err
+}
+
+func UpdateAssetQuote(uid, quote, operator string) error {
+	if len(uid) < 2 {
+		return errors.New("db asset uid is empty of UpdateAssetType")
+	}
+
+	msg := bson.M{"quote": quote, "operator": operator, TimeUpdated: time.Now().Unix()}
 	_, err := updateOne(TableAssets, uid, msg)
 	return err
 }

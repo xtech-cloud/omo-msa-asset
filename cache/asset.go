@@ -34,6 +34,8 @@ type AssetInfo struct {
 	Height   uint32
 	Weight   uint32
 	Size     uint64
+	Created  int64
+	Updated  int64
 	Code     int    //状态码
 	ID       uint64 `json:"-"`
 	UID      string `json:"uid"`
@@ -49,15 +51,14 @@ type AssetInfo struct {
 	Format   string
 	MD5      string
 	Language string
+	Quote    string
 
 	// 快照，中图
 	Snapshot string
 	// 封面小图
 	Small string
 
-	Created int64
-	Updated int64
-	Links   []string
+	Links []string
 }
 
 func (mine *cacheContext) CreateAsset(info *AssetInfo) error {
@@ -83,6 +84,7 @@ func (mine *cacheContext) CreateAsset(info *AssetInfo) error {
 	db.Height = info.Height
 	db.Meta = info.Meta
 	db.Weight = 0
+	db.Quote = info.Quote
 	db.Status = StatusIdle
 	db.Links = info.Links
 
@@ -97,6 +99,9 @@ func (mine *cacheContext) CreateAsset(info *AssetInfo) error {
 }
 
 func (mine *cacheContext) GetAsset(uid string) *AssetInfo {
+	if uid == "" {
+		return nil
+	}
 	db, err := nosql.GetAsset(uid)
 	if err == nil {
 		info := new(AssetInfo)
@@ -224,6 +229,7 @@ func (mine *AssetInfo) initInfo(db *nosql.Asset) {
 	mine.Language = db.Language
 	mine.Snapshot = db.Snapshot
 	mine.Small = db.Small
+	mine.Quote = db.Quote
 
 	mine.Width = db.Width
 	mine.Height = db.Height
@@ -292,6 +298,7 @@ func (mine *AssetInfo) ToRecycle(operator string) error {
 	db.Meta = mine.Meta
 	db.Weight = mine.Weight
 	db.Status = mine.Status
+	db.Quote = mine.Quote
 	db.Links = mine.Links
 	return nosql.CreateRecycle(db)
 }
@@ -372,6 +379,15 @@ func (mine *AssetInfo) UpdateOwner(operator, owner string) error {
 	err := nosql.UpdateAssetOwner(mine.UID, owner, operator)
 	if err == nil {
 		mine.Owner = owner
+		mine.Operator = operator
+	}
+	return err
+}
+
+func (mine *AssetInfo) UpdateQuote(operator, quote string) error {
+	err := nosql.UpdateAssetQuote(mine.UID, quote, operator)
+	if err == nil {
+		mine.Quote = quote
 		mine.Operator = operator
 	}
 	return err

@@ -107,17 +107,23 @@ func CheckTimes() {
 	dbs := make([]*Asset, 0, 50000)
 	dbs = GetAll(TableAssets, dbs)
 	for _, db := range dbs {
-		UpdateItemTime(TableAssets, db.UID.Hex(), db.CreatedTime, db.UpdatedTime, db.DeleteTime)
+		if db.Created < 1 {
+			UpdateItemTime(TableAssets, db.UID.Hex(), db.CreatedTime, db.UpdatedTime, db.DeleteTime)
+		}
 	}
 	dbs1 := make([]*Thumb, 0, 5000)
 	dbs1 = GetAll(TableThumbs, dbs1)
 	for _, db := range dbs1 {
-		UpdateItemTime(TableThumbs, db.UID.Hex(), db.CreatedTime, db.UpdatedTime, db.DeleteTime)
+		if db.Created < 1 {
+			UpdateItemTime(TableThumbs, db.UID.Hex(), db.CreatedTime, db.UpdatedTime, db.DeleteTime)
+		}
 	}
 	dbs2 := make([]*Recycle, 0, 5000)
 	dbs2 = GetAll(TableRecycles, dbs2)
 	for _, db := range dbs2 {
-		UpdateItemTime(TableRecycles, db.UID.Hex(), db.CreatedTime, db.DeleteTime, db.DeleteTime)
+		if db.Created < 1 {
+			UpdateItemTime(TableRecycles, db.UID.Hex(), db.CreatedTime, db.DeleteTime, db.DeleteTime)
+		}
 	}
 }
 

@@ -27,7 +27,11 @@ func UpdateItemTime(table, uid string, created, updated, del time.Time) {
 	if u < 0 {
 		u = 0
 	}
-	msg := bson.M{TimeCreated: created.Unix(), TimeUpdated: u, TimeDeleted: d}
+	c := created.Unix()
+	if c < 0 {
+		c = 0
+	}
+	msg := bson.M{TimeCreated: c, TimeUpdated: u, TimeDeleted: d}
 	_, _ = updateOne(table, uid, msg)
 }
 

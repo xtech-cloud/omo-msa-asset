@@ -89,6 +89,7 @@ func (mine *AssetService) AddOne(ctx context.Context, in *pb.ReqAssetAdd, out *p
 	info.Height = in.Height
 	info.Meta = in.Meta
 	info.Remark = in.Remark
+	info.Quote = ""
 	err := cache.Context().CreateAsset(info)
 	if err != nil {
 		out.Status = outError(path, err.Error(), pb.ResultStatus_DBException)
@@ -366,6 +367,8 @@ func (mine *AssetService) UpdateByFilter(ctx context.Context, in *pb.RequestUpda
 		err = info.UpdateLinks(in.Operator, in.Values)
 	} else if in.Field == "owner" {
 		err = info.UpdateOwner(in.Operator, in.Value)
+	} else if in.Field == "quote" {
+		err = info.UpdateQuote(in.Operator, in.Value)
 	} else {
 		out.Status = outError(path, "not define the field", pb.ResultStatus_DBException)
 		return nil
