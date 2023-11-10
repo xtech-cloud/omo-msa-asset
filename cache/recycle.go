@@ -66,7 +66,7 @@ func (mine *cacheContext) CreateRecycle(info *RecycleInfo) error {
 	db.Height = info.Height
 	db.Meta = info.Meta
 	db.Weight = 0
-	db.Status = StatusIdle
+	db.Status = StatusPrivate
 	db.Links = info.Links
 	err := nosql.CreateRecycle(db)
 	if err == nil {

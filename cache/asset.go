@@ -18,13 +18,15 @@ const (
 	AssetTypeAudio        = 4
 	AssetTypeVideo        = 5
 	AssetTypePortrait     = 6 //系统头像
+	AssetTypeIcon         = 7 //图标库
 )
 
 const UP_QINIU = "qiniu"
 
 const (
-	StatusIdle uint8 = 0
-	StatusHide uint8 = 1
+	StatusPrivate uint8 = 0
+	StatusPending uint8 = 1
+	StatusPublish uint8 = 2
 )
 
 type AssetInfo struct {
@@ -85,7 +87,7 @@ func (mine *cacheContext) CreateAsset(info *AssetInfo) error {
 	db.Meta = info.Meta
 	db.Weight = 0
 	db.Quote = info.Quote
-	db.Status = StatusIdle
+	db.Status = StatusPrivate
 	db.Links = info.Links
 
 	err := nosql.CreateAsset(db)
