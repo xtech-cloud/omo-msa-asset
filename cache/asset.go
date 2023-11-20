@@ -1,6 +1,7 @@
 package cache
 
 import (
+	"errors"
 	"github.com/qiniu/api.v7/v7/auth/qbox"
 	"github.com/qiniu/api.v7/v7/storage"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -137,6 +138,34 @@ func (mine *cacheContext) GetAssetsByOwner(uid string) []*AssetInfo {
 	return list
 }
 
+func (mine *cacheContext) GetPublishAssetsByOwner(uid string) []*AssetInfo {
+	array, err := nosql.GetAssetsByOwnerStatus(uid, StatusPublish)
+	if err != nil {
+		return make([]*AssetInfo, 0, 1)
+	}
+	list := make([]*AssetInfo, 0, len(array))
+	for _, asset := range array {
+		info := new(AssetInfo)
+		info.initInfo(asset)
+		list = append(list, info)
+	}
+	return list
+}
+
+func (mine *cacheContext) GetAssetsByQuote(uid string) []*AssetInfo {
+	array, err := nosql.GetAssetsByQuote(uid)
+	if err != nil {
+		return make([]*AssetInfo, 0, 1)
+	}
+	list := make([]*AssetInfo, 0, len(array))
+	for _, asset := range array {
+		info := new(AssetInfo)
+		info.initInfo(asset)
+		list = append(list, info)
+	}
+	return list
+}
+
 func (mine *cacheContext) GetAssetsByType(tp int) []*AssetInfo {
 	array, err := nosql.GetAssetsByType(uint8(tp))
 	if err != nil {
@@ -149,6 +178,27 @@ func (mine *cacheContext) GetAssetsByType(tp int) []*AssetInfo {
 		list = append(list, info)
 	}
 	return list
+}
+
+func (mine *cacheContext) UpdateAssetsStatus(arr []string, st uint32, operator string) error {
+	if arr == nil {
+		return nil
+	}
+	for _, uid := range arr {
+		_ = nosql.UpdateAssetStatus(uid, operator, uint8(st))
+	}
+	return nil
+}
+
+func (mine *cacheContext) UpdateAssetsEntity(entity, operator string) error {
+	if entity == "" {
+		return errors.New("the entity is empty")
+	}
+	assets, _ := nosql.GetAssetsByOwner(entity)
+	for _, asset := range assets {
+		_ = nosql.UpdateAssetStatus(asset.UID.Hex(), operator, StatusPublish)
+	}
+	return nil
 }
 
 func (mine *cacheContext) GetAssetsByRegex(key string, from, to int64) []*AssetInfo {
@@ -242,7 +292,6 @@ func (mine *AssetInfo) initInfo(db *nosql.Asset) {
 	if mine.Code < 1 {
 		go validateAsset(mine.UID, mine.getMinURL())
 	}
-
 }
 
 func (mine *AssetInfo) GetThumbs() ([]*ThumbInfo, error) {

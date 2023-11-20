@@ -251,6 +251,42 @@ func GetAssetsByOwner(owner string) ([]*Asset, error) {
 	return items, nil
 }
 
+func GetAssetsByOwnerStatus(owner string, st uint8) ([]*Asset, error) {
+	var items = make([]*Asset, 0, 20)
+	filter := bson.M{"owner": owner, "status": st, TimeDeleted: 0}
+	cursor, err1 := findMany(TableAssets, filter, 0)
+	if err1 != nil {
+		return nil, err1
+	}
+	for cursor.Next(context.Background()) {
+		var node = new(Asset)
+		if err := cursor.Decode(&node); err != nil {
+			return nil, err
+		} else {
+			items = append(items, node)
+		}
+	}
+	return items, nil
+}
+
+func GetAssetsByQuote(quote string) ([]*Asset, error) {
+	var items = make([]*Asset, 0, 20)
+	filter := bson.M{"quote": quote, TimeDeleted: 0}
+	cursor, err1 := findMany(TableAssets, filter, 0)
+	if err1 != nil {
+		return nil, err1
+	}
+	for cursor.Next(context.Background()) {
+		var node = new(Asset)
+		if err := cursor.Decode(&node); err != nil {
+			return nil, err
+		} else {
+			items = append(items, node)
+		}
+	}
+	return items, nil
+}
+
 func GetAssetsByRegex(key string, from, to int64) ([]*Asset, error) {
 	var items = make([]*Asset, 0, 20)
 	filter := bson.M{"name": bson.M{"$regex": key}, TimeCreated: bson.M{"$gt": from, "$lt": to}, TimeDeleted: 0}

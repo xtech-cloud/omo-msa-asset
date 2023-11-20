@@ -38,6 +38,7 @@ func switchAsset(owner string, info *cache.AssetInfo) *pb.AssetInfo {
 	tmp.Width = info.Width
 	tmp.Height = info.Height
 	tmp.Weight = info.Weight
+	tmp.Quote = info.Quote
 	tmp.Status = uint32(info.Status)
 	tmp.Links = info.Links
 	tmp.Source = info.SourceURL()
@@ -89,7 +90,7 @@ func (mine *AssetService) AddOne(ctx context.Context, in *pb.ReqAssetAdd, out *p
 	info.Height = in.Height
 	info.Meta = in.Meta
 	info.Remark = in.Remark
-	info.Quote = ""
+	info.Quote = in.Quote
 	err := cache.Context().CreateAsset(info)
 	if err != nil {
 		out.Status = outError(path, err.Error(), pb.ResultStatus_DBException)
@@ -179,6 +180,8 @@ func (mine *AssetService) GetByFilter(ctx context.Context, in *pb.RequestFilter,
 		if len(in.Numbers) == 2 {
 			list = cache.Context().GetAssetsByRegex(in.Value, in.Numbers[0], in.Numbers[1])
 		}
+	} else if in.Key == "quote" {
+		list = cache.Context().GetAssetsByQuote(in.Value)
 	}
 	out.List = make([]*pb.AssetInfo, 0, len(list))
 	for _, info := range list {
@@ -195,7 +198,13 @@ func (mine *AssetService) GetByOwner(ctx context.Context, in *pb.RequestInfo, ou
 		out.Status = outError(path, "the owner is empty", pb.ResultStatus_Empty)
 		return nil
 	}
-	list := cache.Context().GetAssetsByOwner(in.Owner)
+	var list []*cache.AssetInfo
+	if in.Operator == "publish" {
+		list = cache.Context().GetPublishAssetsByOwner(in.Owner)
+	} else {
+		list = cache.Context().GetAssetsByOwner(in.Owner)
+	}
+
 	out.Owner = in.Owner
 	out.List = make([]*pb.AssetInfo, 0, len(list))
 	for _, val := range list {
@@ -352,27 +361,44 @@ func (mine *AssetService) UpdateByFilter(ctx context.Context, in *pb.RequestUpda
 		out.Status = outError(path, "the uid is empty", pb.ResultStatus_Empty)
 		return nil
 	}
-	info := cache.Context().GetAsset(in.Uid)
-	if info == nil {
-		out.Status = outError(path, "the asset not found", pb.ResultStatus_NotExisted)
-		return nil
-	}
 	var err error
-	if in.Field == "type" {
-		tp, _ := strconv.ParseUint(in.Value, 10, 32)
-		err = info.UpdateType(uint8(tp), in.Operator)
-	} else if in.Field == "language" {
-		err = info.UpdateLanguage(in.Value, in.Operator)
-	} else if in.Field == "links" {
-		err = info.UpdateLinks(in.Operator, in.Values)
-	} else if in.Field == "owner" {
-		err = info.UpdateOwner(in.Operator, in.Value)
-	} else if in.Field == "quote" {
-		err = info.UpdateQuote(in.Operator, in.Value)
+	if in.Uid == "" {
+		if in.Field == "status" {
+			st, er := strconv.Atoi(in.Value)
+			if er != nil {
+				out.Status = outError(path, er.Error(), pb.ResultStatus_DBException)
+			}
+			err = cache.Context().UpdateAssetsStatus(in.Values, uint32(st), in.Operator)
+		} else if in.Field == "public" {
+			err = cache.Context().UpdateAssetsEntity(in.Value, in.Operator)
+		} else {
+			out.Status = outError(path, "not define the field", pb.ResultStatus_DBException)
+			return nil
+		}
 	} else {
-		out.Status = outError(path, "not define the field", pb.ResultStatus_DBException)
-		return nil
+		info := cache.Context().GetAsset(in.Uid)
+		if info == nil {
+			out.Status = outError(path, "the asset not found", pb.ResultStatus_NotExisted)
+			return nil
+		}
+
+		if in.Field == "type" {
+			tp, _ := strconv.ParseUint(in.Value, 10, 32)
+			err = info.UpdateType(uint8(tp), in.Operator)
+		} else if in.Field == "language" {
+			err = info.UpdateLanguage(in.Value, in.Operator)
+		} else if in.Field == "links" {
+			err = info.UpdateLinks(in.Operator, in.Values)
+		} else if in.Field == "owner" {
+			err = info.UpdateOwner(in.Operator, in.Value)
+		} else if in.Field == "quote" {
+			err = info.UpdateQuote(in.Operator, in.Value)
+		} else {
+			out.Status = outError(path, "not define the field", pb.ResultStatus_DBException)
+			return nil
+		}
 	}
+
 	if err != nil {
 		out.Status = outError(path, err.Error(), pb.ResultStatus_DBException)
 		return nil
