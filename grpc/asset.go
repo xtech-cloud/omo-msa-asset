@@ -182,6 +182,13 @@ func (mine *AssetService) GetByFilter(ctx context.Context, in *pb.RequestFilter,
 		}
 	} else if in.Key == "quote" {
 		list = cache.Context().GetAssetsByQuote(in.Value)
+	} else if in.Key == "owner_type" {
+		tp, err := strconv.Atoi(in.Value)
+		if err != nil {
+			out.Status = outError(path, err.Error(), pb.ResultStatus_DBException)
+			return nil
+		}
+		list = cache.Context().GetAssetsByOwnerType(in.Owner, tp)
 	}
 	out.List = make([]*pb.AssetInfo, 0, len(list))
 	for _, info := range list {
@@ -355,12 +362,8 @@ func (mine *AssetService) UpdateStatus(ctx context.Context, in *pb.ReqAssetWeigh
 }
 
 func (mine *AssetService) UpdateByFilter(ctx context.Context, in *pb.RequestUpdate, out *pb.ReplyInfo) error {
-	path := "asset.updateStatus"
+	path := "asset.updateByFilter"
 	inLog(path, in)
-	if len(in.Uid) < 1 {
-		out.Status = outError(path, "the uid is empty", pb.ResultStatus_Empty)
-		return nil
-	}
 	var err error
 	if in.Uid == "" {
 		if in.Field == "status" {
@@ -369,8 +372,8 @@ func (mine *AssetService) UpdateByFilter(ctx context.Context, in *pb.RequestUpda
 				out.Status = outError(path, er.Error(), pb.ResultStatus_DBException)
 			}
 			err = cache.Context().UpdateAssetsStatus(in.Values, uint32(st), in.Operator)
-		} else if in.Field == "public" {
-			err = cache.Context().UpdateAssetsEntity(in.Value, in.Operator)
+		} else if in.Field == "publish" {
+			err = cache.Context().PublishAssetsEntity(in.Value, in.Operator)
 		} else {
 			out.Status = outError(path, "not define the field", pb.ResultStatus_DBException)
 			return nil

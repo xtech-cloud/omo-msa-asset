@@ -180,3 +180,34 @@ func (mine *ThumbService) UpdateBase(ctx context.Context, in *pb.ReqThumbUpdate,
 	out.Status = outLog(path, out)
 	return nil
 }
+
+func (mine *ThumbService) UpdateByFilter(ctx context.Context, in *pb.RequestUpdate, out *pb.ReplyInfo) error {
+	path := "thumb.updateByFilter"
+	inLog(path, in)
+	if len(in.Uid) < 2 {
+		out.Status = outError(path, "the uid is empty", pb.ResultStatus_Empty)
+		return nil
+	}
+	thumb := cache.Context().GetThumb(in.Uid)
+	var err error
+	if in.Field == "meta" {
+		err = thumb.UpdateInfo(in.Value, in.Operator)
+	}
+	if err != nil {
+		out.Status = outError(path, err.Error(), pb.ResultStatus_DBException)
+		return nil
+	}
+	out.Status = outLog(path, out)
+	return nil
+}
+
+func (mine *ThumbService) GetByFilter(ctx context.Context, in *pb.RequestFilter, out *pb.ReplyThumbList) error {
+	path := "thumb.getByFilter"
+	inLog(path, in)
+	if len(in.Uid) < 2 {
+		out.Status = outError(path, "the uid is empty", pb.ResultStatus_Empty)
+		return nil
+	}
+	out.Status = outLog(path, out)
+	return nil
+}

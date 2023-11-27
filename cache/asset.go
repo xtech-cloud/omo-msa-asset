@@ -166,6 +166,20 @@ func (mine *cacheContext) GetAssetsByQuote(uid string) []*AssetInfo {
 	return list
 }
 
+func (mine *cacheContext) GetAssetsByOwnerType(owner string, tp int) []*AssetInfo {
+	array, err := nosql.GetAssetsByOwnerType(owner, uint8(tp))
+	if err != nil {
+		return make([]*AssetInfo, 0, 1)
+	}
+	list := make([]*AssetInfo, 0, len(array))
+	for _, asset := range array {
+		info := new(AssetInfo)
+		info.initInfo(asset)
+		list = append(list, info)
+	}
+	return list
+}
+
 func (mine *cacheContext) GetAssetsByType(tp int) []*AssetInfo {
 	array, err := nosql.GetAssetsByType(uint8(tp))
 	if err != nil {
@@ -190,13 +204,15 @@ func (mine *cacheContext) UpdateAssetsStatus(arr []string, st uint32, operator s
 	return nil
 }
 
-func (mine *cacheContext) UpdateAssetsEntity(entity, operator string) error {
+func (mine *cacheContext) PublishAssetsEntity(entity, operator string) error {
 	if entity == "" {
 		return errors.New("the entity is empty")
 	}
 	assets, _ := nosql.GetAssetsByOwner(entity)
 	for _, asset := range assets {
-		_ = nosql.UpdateAssetStatus(asset.UID.Hex(), operator, StatusPublish)
+		if asset.Status != StatusPublish {
+			_ = nosql.UpdateAssetStatus(asset.UID.Hex(), operator, StatusPublish)
+		}
 	}
 	return nil
 }

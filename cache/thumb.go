@@ -19,6 +19,7 @@ type ThumbInfo struct {
 	Asset string
 	Face  string
 	URL   string
+	Meta  string
 }
 
 func (mine *ThumbInfo) initInfo(db *nosql.Thumb) {
@@ -35,6 +36,7 @@ func (mine *ThumbInfo) initInfo(db *nosql.Thumb) {
 	mine.URL = db.URL
 	mine.Creator = db.Creator
 	mine.Operator = db.Operator
+	mine.Meta = db.Meta
 }
 
 func (mine *ThumbInfo) UpdateBase(owner string, similar float32) error {
@@ -42,6 +44,15 @@ func (mine *ThumbInfo) UpdateBase(owner string, similar float32) error {
 	if err == nil {
 		mine.Owner = owner
 		mine.Similar = similar
+	}
+	return err
+}
+
+func (mine *ThumbInfo) UpdateInfo(meta, operator string) error {
+	err := nosql.UpdateThumbMeta(mine.UID, meta, operator)
+	if err == nil {
+		mine.Meta = meta
+		mine.Operator = operator
 	}
 	return err
 }

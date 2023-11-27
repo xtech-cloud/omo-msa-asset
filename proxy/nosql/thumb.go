@@ -28,6 +28,7 @@ type Thumb struct {
 	URL      string  `json:"url" bson:"url"`
 	Asset    string  `json:"asset" bson:"asset"`
 	Similar  float32 `json:"similar" bson:"similar"`
+	Meta     string  `json:"meta" bson:"meta"`
 }
 
 func CreateThumb(info *Thumb) error {
@@ -131,6 +132,16 @@ func UpdateThumbBase(uid, owner string, similar float32) error {
 	}
 
 	msg := bson.M{"owner": owner, "similar": similar, "updatedAt": time.Now()}
+	_, err := updateOne(TableAssets, uid, msg)
+	return err
+}
+
+func UpdateThumbMeta(uid, meta, operator string) error {
+	if len(uid) < 2 {
+		return errors.New("db asset uid is empty of GetAsset")
+	}
+
+	msg := bson.M{"meta": meta, "operator": operator, "updatedAt": time.Now()}
 	_, err := updateOne(TableAssets, uid, msg)
 	return err
 }
