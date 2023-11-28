@@ -165,6 +165,8 @@ func (mine *AssetService) GetByFilter(ctx context.Context, in *pb.RequestFilter,
 	path := "asset.getByFilter"
 	inLog(path, in)
 	var list []*cache.AssetInfo
+	var total uint32
+	var pages uint32
 	if in.Key == "links" {
 		list = cache.Context().GetAssetsByLink(in.Key)
 	} else if in.Key == "creator" {
@@ -181,7 +183,7 @@ func (mine *AssetService) GetByFilter(ctx context.Context, in *pb.RequestFilter,
 			list = cache.Context().GetAssetsByRegex(in.Value, in.Numbers[0], in.Numbers[1])
 		}
 	} else if in.Key == "quote" {
-		list = cache.Context().GetAssetsByQuote(in.Value)
+		total, pages, list = cache.Context().GetAssetsByQuote(in.Owner, in.Value, in.Page, in.Number)
 	} else if in.Key == "owner_type" {
 		tp, err := strconv.Atoi(in.Value)
 		if err != nil {
@@ -194,6 +196,8 @@ func (mine *AssetService) GetByFilter(ctx context.Context, in *pb.RequestFilter,
 	for _, info := range list {
 		out.List = append(out.List, switchAsset(info.Owner, info))
 	}
+	out.Total = total
+	out.Pages = pages
 	out.Status = outLog(path, fmt.Sprintf("the length = %d", len(out.List)))
 	return nil
 }

@@ -54,7 +54,7 @@ type AssetInfo struct {
 	Format   string
 	MD5      string
 	Language string
-	Quote    string
+	Quote    string //引用的实体
 
 	// 快照，中图
 	Snapshot string
@@ -152,18 +152,29 @@ func (mine *cacheContext) GetPublishAssetsByOwner(uid string) []*AssetInfo {
 	return list
 }
 
-func (mine *cacheContext) GetAssetsByQuote(uid string) []*AssetInfo {
-	array, err := nosql.GetAssetsByQuote(uid)
-	if err != nil {
-		return make([]*AssetInfo, 0, 1)
+func (mine *cacheContext) GetAssetsByQuote(owner, quote string, page, num uint32) (uint32, uint32, []*AssetInfo) {
+	if quote == "" {
+		return 0, 0, make([]*AssetInfo, 0, 1)
 	}
-	list := make([]*AssetInfo, 0, len(array))
-	for _, asset := range array {
+	var dbs []*nosql.Asset
+	var err error
+	if len(owner) > 1 {
+		dbs, err = nosql.GetAssetsByOwnerQuote(owner, quote)
+	} else {
+		dbs, err = nosql.GetAssetsByQuote(quote)
+	}
+
+	if err != nil {
+		return 0, 0, make([]*AssetInfo, 0, 1)
+	}
+	total, pages, arr := checkPage(page, num, dbs)
+	list := make([]*AssetInfo, 0, num)
+	for _, asset := range arr {
 		info := new(AssetInfo)
 		info.initInfo(asset)
 		list = append(list, info)
 	}
-	return list
+	return total, pages, list
 }
 
 func (mine *cacheContext) GetAssetsByOwnerType(owner string, tp int) []*AssetInfo {

@@ -16,7 +16,7 @@ require (
 	github.com/satori/go.uuid v1.2.0
 	github.com/sirupsen/logrus v1.8.1
 	github.com/tidwall/gjson v1.6.0
-	github.com/xtech-cloud/omo-msp-asset v1.2.15
+	github.com/xtech-cloud/omo-msp-asset v1.2.16
 	go.mongodb.org/mongo-driver v1.4.6
 	go.uber.org/zap v1.13.0
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0
