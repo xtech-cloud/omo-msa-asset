@@ -51,15 +51,36 @@ type StorageConfig struct {
 
 type ExamineConfig struct {
 	Type      string `json:"type"`
+	App       string `json:"app"`
 	AccessKey string `json:"access"`
 	SecretKey string `json:"secret"`
 }
 
+type APIConfig struct {
+	Type      string     `json:"type"`
+	App       string     `json:"app"`
+	Address   string     `json:"address"`
+	AccessKey string     `json:"access"`
+	SecretKey string     `json:"secret"`
+	Face      *APIOption `json:"face"`
+	User      *APIOption `json:"user"`
+	Group     *APIOption `json:"group"`
+}
+
+type APIOption struct {
+	Add    string `json:"add"`
+	Delete string `json:"delete"`
+	List   string `json:"list"`
+	Get    string `json:"get"`
+	Update string `json:"update"`
+}
+
 type SchemaConfig struct {
-	Service  ServiceConfig `json:"service"`
-	Logger   LoggerConfig  `json:"logger"`
-	Database DBConfig      `json:"database"`
-	Basic    BasicConfig   `json:"basic"`
-	Storage  StorageConfig `json:"storage"`
-	Examine  ExamineConfig `json:"examine"`
+	Service   ServiceConfig `json:"service"`
+	Logger    LoggerConfig  `json:"logger"`
+	Database  DBConfig      `json:"database"`
+	Basic     BasicConfig   `json:"basic"`
+	Storage   StorageConfig `json:"storage"`
+	Examine   ExamineConfig `json:"examine"`
+	Detection APIConfig     `json:"detection"`
 }

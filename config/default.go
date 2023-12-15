@@ -33,8 +33,33 @@ const defaultJson string = `{
 	},
 	"examine":{
 		"type":"baidu",
+		"app":"40017362",
 		"access":"tNEOCTXw0j6wQCGgIEOj54f6",
 		"secret":"1w5pDR2bqDf0vgmHUCYqd8YPoACw6d25"
+	},
+	"detection":{
+		"type":"baidu",
+		"app":"24196251",
+		"address":"https://aip.baidubce.com/rest/2.0/face/v3/detect",
+		"access":"Z5NUW1i1gzu4VBgOcMUDg8IK",
+		"secret":"X3EaQselwNLCvAcWH6FdRvUgRkTZo0T2",
+		"user":{
+			"add":"https://aip.baidubce.com/rest/2.0/face/v3/faceset/user/add",
+			"delete":"https://aip.baidubce.com/rest/2.0/face/v3/faceset/user/delete",
+			"update":"https://aip.baidubce.com/rest/2.0/face/v3/faceset/user/update",
+			"list":"https://aip.baidubce.com/rest/2.0/face/v3/faceset/group/getusers",
+			"get":"https://aip.baidubce.com/rest/2.0/face/v3/faceset/user/get"
+		},
+		"face":{
+			"add":"https://aip.baidubce.com/rest/2.0/face/v3/faceset/user/add",
+			"delete":"https://aip.baidubce.com/rest/2.0/face/v3/faceset/face/delete",
+			"list":"https://aip.baidubce.com/rest/2.0/face/v3/faceset/face/getlist"
+		},
+		"group":{
+			"add":"https://aip.baidubce.com/rest/2.0/face/v3/faceset/group/add",
+			"delete":"https://aip.baidubce.com/rest/2.0/face/v3/faceset/group/delete",
+			"list":"https://aip.baidubce.com/rest/2.0/face/v3/faceset/group/getlist"
+		}
 	},
 	"basic": {
 		"synonym": 6,

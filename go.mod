@@ -12,6 +12,7 @@ require (
 	github.com/micro/go-plugins/logger/logrus/v2 v2.9.1
 	github.com/micro/go-plugins/registry/consul/v2 v2.9.1
 	github.com/micro/go-plugins/registry/etcdv3/v2 v2.9.1
+	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646
 	github.com/qiniu/api.v7/v7 v7.8.0
 	github.com/satori/go.uuid v1.2.0
 	github.com/sirupsen/logrus v1.8.1

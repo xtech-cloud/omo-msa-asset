@@ -55,9 +55,17 @@ func main() {
 	logger.Infof("- commit       : %s", CommitID)
 	logger.Info("-------------------------------------------------------------")
 	// Run service
+
+	go delayRun()
+
 	if err := service.Run(); err != nil {
 		logger.Fatal(err)
 	}
+}
+
+func delayRun() {
+	time.Sleep(5 * time.Second)
+	cache.PublishSystemAssets()
 }
 
 func md5hex(_file string) string {

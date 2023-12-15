@@ -5,6 +5,7 @@ import (
 	"errors"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"omo.msa.asset/proxy"
 	"time"
 )
 
@@ -21,14 +22,16 @@ type Thumb struct {
 	Creator     string             `json:"creator" bson:"creator"`
 	Operator    string             `json:"operator" bson:"operator"`
 
-	Owner    string  `json:"owner" bson:"owner"`
-	FaceID   string  `json:"face" bson:"face"`
-	Probably float32 `json:"probably" bson:"probably"`
-	Blur     float32 `json:"blur" bson:"blur"`
-	URL      string  `json:"url" bson:"url"`
-	Asset    string  `json:"asset" bson:"asset"`
-	Similar  float32 `json:"similar" bson:"similar"`
-	Meta     string  `json:"meta" bson:"meta"`
+	Owner    string             `json:"owner" bson:"owner"`
+	FaceID   string             `json:"face" bson:"face"`
+	Probably float32            `json:"probably" bson:"probably"`
+	Blur     float32            `json:"blur" bson:"blur"`
+	URL      string             `json:"url" bson:"url"`
+	Asset    string             `json:"asset" bson:"asset"`
+	Similar  float32            `json:"similar" bson:"similar"`
+	Meta     string             `json:"meta" bson:"meta"`
+	Token    string             `json:"token" bson:"token"`
+	Location proxy.LocationInfo `json:"location" bson:"location"`
 }
 
 func CreateThumb(info *Thumb) error {
