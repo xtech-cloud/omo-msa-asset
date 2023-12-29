@@ -18,4 +18,7 @@ const (
 	数量自动增加
 	*/
 	TableSequence = "sequences"
+
+	//文件夹
+	TableFolders = "folders"
 )

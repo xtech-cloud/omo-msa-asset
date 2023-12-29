@@ -287,6 +287,12 @@ func GetAssetsByQuote(quote string) ([]*Asset, error) {
 	return items, nil
 }
 
+func GetAssetsCountByQuote(quote string) int64 {
+	filter := bson.M{"quote": quote, TimeDeleted: 0}
+	num, _ := getCountByFilter(TableAssets, filter)
+	return num
+}
+
 func GetAssetsByOwnerQuote(owner, quote string) ([]*Asset, error) {
 	var items = make([]*Asset, 0, 20)
 	filter := bson.M{"owner": owner, "quote": quote, TimeDeleted: 0}

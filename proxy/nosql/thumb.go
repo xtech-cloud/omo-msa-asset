@@ -78,7 +78,7 @@ func GetThumbByFace(asset, face string) (*Thumb, error) {
 	if len(face) < 2 {
 		return nil, errors.New("db thumb face is empty of GetThumbByFace")
 	}
-	filter := bson.M{"asset": asset, "face": face, "deleteAt": new(time.Time)}
+	filter := bson.M{"asset": asset, "face": face, TimeDeleted: 0}
 	result, err := findOneBy(TableThumbs, filter)
 	if err != nil {
 		return nil, err
@@ -93,8 +93,7 @@ func GetThumbByFace(asset, face string) (*Thumb, error) {
 
 func GetThumbsByOwner(owner string) ([]*Thumb, error) {
 	var items = make([]*Thumb, 0, 20)
-	def := new(time.Time)
-	filter := bson.M{"owner": owner, "deleteAt": def}
+	filter := bson.M{"owner": owner, TimeDeleted: 0}
 	cursor, err1 := findMany(TableThumbs, filter, 0)
 	if err1 != nil {
 		return nil, err1
@@ -112,8 +111,7 @@ func GetThumbsByOwner(owner string) ([]*Thumb, error) {
 
 func GetThumbsByAsset(asset string) ([]*Thumb, error) {
 	var items = make([]*Thumb, 0, 20)
-	def := new(time.Time)
-	filter := bson.M{"asset": asset, "deleteAt": def}
+	filter := bson.M{"asset": asset, TimeDeleted: 0}
 	cursor, err1 := findMany(TableThumbs, filter, 0)
 	if err1 != nil {
 		return nil, err1
@@ -134,7 +132,7 @@ func UpdateThumbBase(uid, owner string, similar float32) error {
 		return errors.New("db asset uid is empty of GetAsset")
 	}
 
-	msg := bson.M{"owner": owner, "similar": similar, "updatedAt": time.Now()}
+	msg := bson.M{"owner": owner, "similar": similar, TimeUpdated: time.Now().Unix()}
 	_, err := updateOne(TableAssets, uid, msg)
 	return err
 }
@@ -144,7 +142,7 @@ func UpdateThumbMeta(uid, meta, operator string) error {
 		return errors.New("db asset uid is empty of GetAsset")
 	}
 
-	msg := bson.M{"meta": meta, "operator": operator, "updatedAt": time.Now()}
+	msg := bson.M{"meta": meta, "operator": operator, TimeUpdated: time.Now().Unix()}
 	_, err := updateOne(TableAssets, uid, msg)
 	return err
 }

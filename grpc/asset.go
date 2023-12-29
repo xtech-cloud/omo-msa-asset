@@ -156,7 +156,9 @@ func (mine *AssetService) GetList(ctx context.Context, in *pb.ReqAssetList, out 
 func (mine *AssetService) GetStatistic(ctx context.Context, in *pb.RequestFilter, out *pb.ReplyStatistic) error {
 	path := "asset.getStatistic"
 	inLog(path, in)
-
+	if in.Key == "quote" {
+		out.Count = cache.Context().GetAssetCount(in.Value)
+	}
 	out.Status = outLog(path, fmt.Sprintf("the length = %d", len(out.List)))
 	return nil
 }

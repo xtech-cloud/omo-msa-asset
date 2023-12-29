@@ -152,6 +152,10 @@ func (mine *cacheContext) GetPublishAssetsByOwner(uid string) []*AssetInfo {
 	return list
 }
 
+func (mine *cacheContext) GetAssetCount(quote string) uint32 {
+	return uint32(nosql.GetAssetsCountByQuote(quote))
+}
+
 func (mine *cacheContext) GetAssetsByQuote(owner, quote string, page, num uint32) (uint32, uint32, []*AssetInfo) {
 	if quote == "" {
 		return 0, 0, make([]*AssetInfo, 0, 1)

@@ -42,6 +42,7 @@ func main() {
 	// Register Handler
 	_ = proto.RegisterAssetServiceHandler(service.Server(), new(grpc.AssetService))
 	_ = proto.RegisterThumbServiceHandler(service.Server(), new(grpc.ThumbService))
+	_ = proto.RegisterFolderServiceHandler(service.Server(), new(grpc.FolderService))
 
 	app, _ := filepath.Abs(os.Args[0])
 
