@@ -133,7 +133,7 @@ func UpdateThumbBase(uid, owner string, similar float32) error {
 	}
 
 	msg := bson.M{"owner": owner, "similar": similar, TimeUpdated: time.Now().Unix()}
-	_, err := updateOne(TableAssets, uid, msg)
+	_, err := updateOne(TableThumbs, uid, msg)
 	return err
 }
 
@@ -143,6 +143,6 @@ func UpdateThumbMeta(uid, meta, operator string) error {
 	}
 
 	msg := bson.M{"meta": meta, "operator": operator, TimeUpdated: time.Now().Unix()}
-	_, err := updateOne(TableAssets, uid, msg)
+	_, err := updateOne(TableThumbs, uid, msg)
 	return err
 }

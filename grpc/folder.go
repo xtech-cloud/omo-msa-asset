@@ -4,6 +4,7 @@ import (
 	"context"
 	pb "github.com/xtech-cloud/omo-msp-asset/proto/asset"
 	"omo.msa.asset/cache"
+	"strconv"
 )
 
 type FolderService struct{}
@@ -21,13 +22,15 @@ func switchFolder(info *cache.FolderInfo) *pb.FolderInfo {
 	tmp.Name = info.Name
 	tmp.Remark = info.Remark
 	tmp.Cover = info.Cover
+	tmp.Type = uint32(info.Type)
 	tmp.Access = uint32(info.Access)
+	tmp.Count = info.GetChildCount()
 
 	tmp.Tags = info.Tags
 	tmp.Users = info.Users
-	tmp.Contents = make([]*pb.PairInt, 0, len(info.Contents))
+	tmp.Contents = make([]*pb.PairInfo, 0, len(info.Contents))
 	for _, content := range info.Contents {
-		tmp.Contents = append(tmp.Contents, &pb.PairInt{Key: content.Key, Value: content.Value, Count: content.Count})
+		tmp.Contents = append(tmp.Contents, &pb.PairInfo{Key: content.Key, Value: content.Value, Count: content.Count})
 	}
 	return tmp
 }
@@ -162,14 +165,11 @@ func (mine *FolderService) UpdateByFilter(ctx context.Context, in *pb.RequestUpd
 func (mine *FolderService) GetByFilter(ctx context.Context, in *pb.RequestFilter, out *pb.ReplyFolderList) error {
 	path := "folder.getByFilter"
 	inLog(path, in)
-	if len(in.Uid) < 2 {
-		out.Status = outError(path, "the uid is empty", pb.ResultStatus_Empty)
-		return nil
-	}
 	var err error
 	var list []*cache.FolderInfo
 	if in.Key == "scene" || in.Key == "" {
-		list, err = cache.Context().GetFoldersByScene(in.Owner)
+		tp, _ := strconv.Atoi(in.Value)
+		list, err = cache.Context().GetFoldersByScene(in.Owner, uint8(tp))
 	} else if in.Key == "parent" {
 		list, err = cache.Context().GetFoldersByParent(in.Value)
 	}

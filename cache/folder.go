@@ -18,6 +18,7 @@ type FolderInfo struct {
 	Operator string
 
 	Access uint8
+	Type   uint8
 
 	Name   string
 	Remark string
@@ -42,6 +43,7 @@ func (mine *cacheContext) CreateFolder(in *pb.ReqFolderAdd) (*FolderInfo, error)
 	if db.Scene == "" {
 		db.Scene = "system"
 	}
+	db.Type = uint8(in.Type)
 	db.Parent = in.Parent
 	db.Access = 0
 	db.Cover = in.Cover
@@ -49,11 +51,13 @@ func (mine *cacheContext) CreateFolder(in *pb.ReqFolderAdd) (*FolderInfo, error)
 	db.Users = in.Users
 	db.Contents = make([]*proxy.PairInfo, 0, len(in.Contents))
 	for _, content := range in.Contents {
-		db.Contents = append(db.Contents, &proxy.PairInfo{
-			Key:   content.Key,
-			Value: content.Value,
-			Count: content.Count,
-		})
+		if len(content.Value) > 0 {
+			db.Contents = append(db.Contents, &proxy.PairInfo{
+				Key:   content.Key,
+				Value: content.Value,
+				Count: content.Count,
+			})
+		}
 	}
 	err := nosql.CreateFolder(db)
 	if err == nil {
@@ -82,8 +86,8 @@ func (mine *cacheContext) GetFolder(uid string) (*FolderInfo, error) {
 	return info, nil
 }
 
-func (mine *cacheContext) GetFoldersByScene(uid string) ([]*FolderInfo, error) {
-	dbs, err := nosql.GetFoldersByScene(uid)
+func (mine *cacheContext) GetFoldersByScene(uid string, tp uint8) ([]*FolderInfo, error) {
+	dbs, err := nosql.GetFoldersByScene(uid, tp)
 	if err != nil {
 		return nil, err
 	}
@@ -123,6 +127,7 @@ func (mine *FolderInfo) initInfo(db *nosql.Folder) {
 	mine.Operator = db.Operator
 	mine.Scene = db.Scene
 	mine.Name = db.Name
+	mine.Type = db.Type
 	mine.Remark = db.Remark
 	mine.Parent = db.Parent
 	mine.Cover = db.Cover
@@ -130,6 +135,11 @@ func (mine *FolderInfo) initInfo(db *nosql.Folder) {
 	mine.Tags = db.Tags
 	mine.Users = db.Users
 	mine.Contents = db.Contents
+}
+
+func (mine *FolderInfo) GetChildCount() uint32 {
+	num := nosql.GetFolderChildrenCount(mine.UID)
+	return uint32(num)
 }
 
 func (mine *FolderInfo) UpdateBase(name, remark, operator string) error {
@@ -179,7 +189,7 @@ func (mine *FolderInfo) UpdateCover(operator, cover string) error {
 	return err
 }
 
-func (mine *FolderInfo) UpdateContents(operator string, list []*pb.PairInt) error {
+func (mine *FolderInfo) UpdateContents(operator string, list []*pb.PairInfo) error {
 	arr := make([]*proxy.PairInfo, 0, len(list))
 	for _, pair := range list {
 		arr = append(arr, &proxy.PairInfo{
