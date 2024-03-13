@@ -109,7 +109,7 @@ func (mine *cacheContext) GetUpToken(key string) string {
 		putPolicy.Scope = config.Schema.Storage.Bucket + ":" + key
 	}
 	putPolicy.Expires = uint64(config.Schema.Storage.Expire) //有效期
-
+	auth.New(cof.AccessKey, cof.SecretKey)
 	return putPolicy.UploadToken(mac)
 }
 
