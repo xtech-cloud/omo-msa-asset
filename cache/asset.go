@@ -340,6 +340,9 @@ func (mine *AssetInfo) GetThumbs() ([]*ThumbInfo, error) {
 }
 
 func (mine *AssetInfo) Remove(operator string) error {
+	if mine.Type == AssetTypePortrait || mine.Type == AssetTypeIcon {
+		return errors.New("the asset of type can not remove")
+	}
 	err := mine.ToRecycle(operator)
 	if err == nil {
 		_ = nosql.RemoveAsset(mine.UID)
