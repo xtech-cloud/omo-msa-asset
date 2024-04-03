@@ -51,13 +51,11 @@ func (mine *cacheContext) CreateFolder(in *pb.ReqFolderAdd) (*FolderInfo, error)
 	db.Users = in.Users
 	db.Contents = make([]*proxy.PairInfo, 0, len(in.Contents))
 	for _, content := range in.Contents {
-		if len(content.Value) > 0 {
-			db.Contents = append(db.Contents, &proxy.PairInfo{
-				Key:   content.Key,
-				Value: content.Value,
-				Count: content.Count,
-			})
-		}
+		db.Contents = append(db.Contents, &proxy.PairInfo{
+			Key:   content.Key,
+			Value: content.Value,
+			Count: content.Count,
+		})
 	}
 	err := nosql.CreateFolder(db)
 	if err == nil {
@@ -115,6 +113,19 @@ func (mine *cacheContext) GetFoldersByParent(uid string) ([]*FolderInfo, error) 
 		list = append(list, info)
 	}
 
+	return list, nil
+}
+
+func (mine *cacheContext) GetFoldersByScenes(arr []string, tp uint8) ([]*FolderInfo, error) {
+	list := make([]*FolderInfo, 0, len(arr)*30)
+	for _, scene := range arr {
+		dbs, _ := nosql.GetFoldersByScene(scene, tp)
+		for _, db := range dbs {
+			info := new(FolderInfo)
+			info.initInfo(db)
+			list = append(list, info)
+		}
+	}
 	return list, nil
 }
 

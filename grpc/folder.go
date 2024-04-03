@@ -172,6 +172,9 @@ func (mine *FolderService) GetByFilter(ctx context.Context, in *pb.RequestFilter
 		list, err = cache.Context().GetFoldersByScene(in.Owner, uint8(tp))
 	} else if in.Key == "parent" {
 		list, err = cache.Context().GetFoldersByParent(in.Value)
+	} else if in.Key == "scenes" {
+		tp, _ := strconv.Atoi(in.Value)
+		list, err = cache.Context().GetFoldersByScenes(in.Values, uint8(tp))
 	}
 	if err != nil {
 		out.Status = outError(path, err.Error(), pb.ResultStatus_DBException)
