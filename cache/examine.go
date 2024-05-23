@@ -58,7 +58,7 @@ func ValidateAssetUrl(uid, url string) (*ExamineResult, error) {
 	return result, nil
 }
 
-func validateAsset(id uint64, uid, uuid, url string) {
+func validateAsset(asset, uid, uuid, owner, url, operator string) {
 	if len(url) < 1 {
 		return
 	}
@@ -74,17 +74,17 @@ func validateAsset(id uint64, uid, uuid, url string) {
 		return
 	}
 	if code == BD_Conclusion {
-		checkFaces(id, uuid, url)
+		checkFaces(asset, uuid, owner, url, operator)
 	}
 }
 
-func checkFaces(asset, key, owner, url string) {
+func checkFaces(asset, key, owner, url, operator string) {
 	resp, er := detectFaces(url)
 	if er != nil {
 		logger.Warn(er.Error())
 		return
 	}
-	er = clipFaces(url, resp)
+	er = clipFaces(asset, key, owner, url, operator, resp)
 	if er != nil {
 		logger.Warn(er.Error())
 		return
