@@ -43,6 +43,7 @@ func main() {
 	_ = proto.RegisterAssetServiceHandler(service.Server(), new(grpc.AssetService))
 	_ = proto.RegisterThumbServiceHandler(service.Server(), new(grpc.ThumbService))
 	_ = proto.RegisterFolderServiceHandler(service.Server(), new(grpc.FolderService))
+	_ = proto.RegisterLabelServiceHandler(service.Server(), new(grpc.LabelService))
 
 	app, _ := filepath.Abs(os.Args[0])
 
@@ -66,7 +67,8 @@ func main() {
 
 func delayRun() {
 	time.Sleep(5 * time.Second)
-	cache.PublishSystemAssets()
+	//cache.PublishSystemAssets()
+	cache.TestDetectFaces()
 }
 
 func md5hex(_file string) string {

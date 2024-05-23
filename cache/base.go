@@ -12,6 +12,8 @@ import (
 	"omo.msa.asset/proxy/nosql"
 )
 
+const DefaultScene = "system"
+
 type cacheContext struct {
 }
 
@@ -41,6 +43,16 @@ func PublishSystemAssets() {
 			_ = nosql.UpdateAssetStatus(db.UID.Hex(), db.Operator, StatusPublish)
 		}
 	}
+}
+
+func TestDetectFaces() {
+	//url := "https://rdpdown.suii.cn/000c0f54-3dd7-40c6-aa2b-f67378947978"
+	url := "https://rdpdown.suii.cn/00278e27e030ac05"
+	resp, er := detectFaces(url)
+	if er != nil {
+		return
+	}
+	clipFaces(url, resp)
 }
 
 func checkPage[T any](page, number uint32, all []T) (uint32, uint32, []T) {

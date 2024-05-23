@@ -21,4 +21,7 @@ const (
 
 	//文件夹
 	TableFolders = "folders"
+
+	//文件夹
+	TableLabels = "labels"
 )

@@ -1,7 +1,9 @@
 package cache
 
 import (
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"omo.msa.asset/proxy/nosql"
+	"time"
 )
 
 type ThumbInfo struct {
@@ -15,12 +17,37 @@ type ThumbInfo struct {
 	Creator  string
 	Operator string
 
+	File  string
 	Owner string
 	Asset string
 	Face  string
-	URL   string
 	Meta  string
 	Token string
+}
+
+func CreateThumb(asset, key, owner, bs64, operator string, info *ImageFace) (*ThumbInfo, error) {
+	db := new(nosql.Thumb)
+	db.UID = primitive.NewObjectID()
+	db.ID = nosql.GetThumbNextID()
+	db.Created = time.Now().Unix()
+	db.Creator = operator
+	db.Operator = operator
+	db.Token = info.Token
+	db.File = key
+	db.Asset = asset
+	db.Blur = info.Quality.Blur
+	db.Owner = owner
+	db.Probably = info.Probability
+	db.Similar = 0
+	db.Location = info.Location
+	db.Meta = bs64
+	err := nosql.CreateThumb(db)
+	if err == nil {
+		data := new(ThumbInfo)
+		data.initInfo(db)
+		return data, nil
+	}
+	return nil, err
 }
 
 func (mine *ThumbInfo) initInfo(db *nosql.Thumb) {
@@ -34,11 +61,11 @@ func (mine *ThumbInfo) initInfo(db *nosql.Thumb) {
 	mine.Similar = db.Similar
 	mine.Blur = db.Blur
 	mine.Face = db.FaceID
-	mine.URL = db.URL
 	mine.Creator = db.Creator
 	mine.Operator = db.Operator
 	mine.Meta = db.Meta
 	mine.Token = db.Token
+	mine.File = db.File
 }
 
 func (mine *ThumbInfo) UpdateBase(owner string, similar float32) error {

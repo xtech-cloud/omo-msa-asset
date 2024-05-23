@@ -40,9 +40,13 @@ const defaultJson string = `{
 	"detection":{
 		"type":"baidu",
 		"app":"24196251",
+		"token":"https://aip.baidubce.com/oauth/2.0/token",
 		"address":"https://aip.baidubce.com/rest/2.0/face/v3/detect",
 		"access":"Z5NUW1i1gzu4VBgOcMUDg8IK",
 		"secret":"X3EaQselwNLCvAcWH6FdRvUgRkTZo0T2",
+		"match":"https://aip.baidubce.com/rest/2.0/face/v3/match",
+		"one_search":"https://aip.baidubce.com/rest/2.0/face/v3/search",
+		"multi_search":"https://aip.baidubce.com/rest/2.0/face/v3/multi-search",
 		"user":{
 			"add":"https://aip.baidubce.com/rest/2.0/face/v3/faceset/user/add",
 			"delete":"https://aip.baidubce.com/rest/2.0/face/v3/faceset/user/delete",

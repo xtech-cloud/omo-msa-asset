@@ -56,15 +56,19 @@ type ExamineConfig struct {
 	SecretKey string `json:"secret"`
 }
 
-type APIConfig struct {
-	Type      string     `json:"type"`
-	App       string     `json:"app"`
-	Address   string     `json:"address"`
-	AccessKey string     `json:"access"`
-	SecretKey string     `json:"secret"`
-	Face      *APIOption `json:"face"`
-	User      *APIOption `json:"user"`
-	Group     *APIOption `json:"group"`
+type DetectConfig struct {
+	Type        string     `json:"type"`
+	App         string     `json:"app"`
+	Token       string     `json:"token"`
+	Address     string     `json:"address"`
+	Match       string     `json:"match"`
+	AccessKey   string     `json:"access"`
+	SecretKey   string     `json:"secret"`
+	OneSearch   string     `json:"one_search"`
+	MultiSearch string     `json:"multi_search"`
+	Face        *APIOption `json:"face"`
+	User        *APIOption `json:"user"`
+	Group       *APIOption `json:"group"`
 }
 
 type APIOption struct {
@@ -82,5 +86,5 @@ type SchemaConfig struct {
 	Basic     BasicConfig   `json:"basic"`
 	Storage   StorageConfig `json:"storage"`
 	Examine   ExamineConfig `json:"examine"`
-	Detection APIConfig     `json:"detection"`
+	Detection DetectConfig  `json:"detection"`
 }

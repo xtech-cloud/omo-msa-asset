@@ -21,9 +21,10 @@ func switchThumb(info *cache.ThumbInfo) *pb.ThumbInfo {
 	tmp.Asset = info.Asset
 	tmp.Probably = info.Probably
 	tmp.Face = info.Face
-	tmp.Url = info.URL
+	tmp.Url = cache.GetURL(info.File, true)
 	tmp.Blur = info.Blur
 	tmp.Similar = info.Similar
+	tmp.Meta = info.Meta
 	return tmp
 }
 

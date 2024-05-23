@@ -6,6 +6,7 @@ replace google.golang.org/grpc => github.com/grpc/grpc-go v1.26.0
 
 require (
 	github.com/Baidu-AIP/golang-sdk v1.1.1
+	github.com/disintegration/imaging v1.6.2
 	github.com/labstack/gommon v0.3.0
 	github.com/micro/go-micro/v2 v2.9.1
 	github.com/micro/go-plugins/config/source/consul/v2 v2.9.1
@@ -17,10 +18,10 @@ require (
 	github.com/satori/go.uuid v1.2.0
 	github.com/sirupsen/logrus v1.8.1
 	github.com/tidwall/gjson v1.6.0
-	github.com/xtech-cloud/omo-msp-asset v1.3.2
+	github.com/xtech-cloud/omo-msp-asset v1.3.3
 	go.mongodb.org/mongo-driver v1.4.6
 	go.uber.org/zap v1.13.0
-	golang.org/x/image v0.0.0-20190802002840-cff245a6509b
+	golang.org/x/image v0.0.0-20191009234506-e7c1f5e7dbb8
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0
 )
 

@@ -26,7 +26,7 @@ type Thumb struct {
 	FaceID   string             `json:"face" bson:"face"`
 	Probably float32            `json:"probably" bson:"probably"`
 	Blur     float32            `json:"blur" bson:"blur"`
-	URL      string             `json:"url" bson:"url"`
+	File     string             `json:"file" bson:"file"` //远程文件名
 	Asset    string             `json:"asset" bson:"asset"`
 	Similar  float32            `json:"similar" bson:"similar"`
 	Meta     string             `json:"meta" bson:"meta"`

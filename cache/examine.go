@@ -28,7 +28,14 @@ type ExamineResult struct {
 
 func (mine *ExamineResult) GetStatus() int {
 	if config.Schema.Examine.Type == "baidu" {
-		return 100 + mine.Kind
+		if mine.Kind == 1 {
+			return BD_Conclusion
+		} else if mine.Kind == 2 {
+			return BD_NonConclusion
+		} else if mine.Kind == 3 {
+			return BD_Uncertain
+		}
+		return BD_Failed
 	} else {
 		return 0
 	}
@@ -51,7 +58,10 @@ func ValidateAssetUrl(uid, url string) (*ExamineResult, error) {
 	return result, nil
 }
 
-func validateAsset(uid, url string) {
+func validateAsset(id uint64, uid, uuid, url string) {
+	if len(url) < 1 {
+		return
+	}
 	result, err := ValidateAssetUrl(uid, url)
 	if err != nil {
 		logger.Warn("validate asset error that url = " + url + " and msg = " + err.Error())
@@ -61,5 +71,23 @@ func validateAsset(uid, url string) {
 	er := nosql.UpdateAssetCode(uid, code)
 	if er != nil {
 		logger.Warn("set asset code failed that uid = " + uid + " and msg = " + err.Error())
+		return
 	}
+	if code == BD_Conclusion {
+		checkFaces(id, uuid, url)
+	}
+}
+
+func checkFaces(asset, key, owner, url string) {
+	resp, er := detectFaces(url)
+	if er != nil {
+		logger.Warn(er.Error())
+		return
+	}
+	er = clipFaces(url, resp)
+	if er != nil {
+		logger.Warn(er.Error())
+		return
+	}
+
 }

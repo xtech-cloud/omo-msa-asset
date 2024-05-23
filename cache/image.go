@@ -4,24 +4,130 @@ import (
 	"bytes"
 	"encoding/base64"
 	"errors"
+	"github.com/disintegration/imaging"
 	"github.com/nfnt/resize"
 	"golang.org/x/image/bmp"
+	"golang.org/x/image/webp"
 	"image"
 	"image/gif"
 	"image/jpeg"
 	"image/png"
 	"io"
 	"log"
+	"net/http"
+	"omo.msa.asset/proxy"
 )
 
-//补上缺失的代码
+func clipFaces(asset, key, owner, url, operator string, info *FaceResponse) error {
+	size, buf, err := downloadAsset(url)
+	if err != nil {
+		return err
+	}
+	if size < 100 {
+		return errors.New("the data is empty of url = " + url)
+	}
+	if info.Result == nil {
+		return errors.New("not found the face of url = " + url)
+	}
+	for _, face := range info.Result.List {
+		bs64, er := clipImageFace(buf, face.Location)
+		if er != nil {
+			return er
+		}
+		_, er1 := CreateThumb(asset, key, owner, bs64, operator, face)
+		if er1 != nil {
+			return er1
+		}
+	}
+	return nil
+}
+
+func downloadAsset(url string) (int64, *bytes.Buffer, error) {
+	resp, err := http.Get(url)
+	if err != nil {
+		return 0, nil, err
+	}
+	defer resp.Body.Close()
+	buf := new(bytes.Buffer)
+	l, er := buf.ReadFrom(resp.Body)
+	if er != nil {
+		return 0, nil, er
+	}
+	return l, buf, nil
+}
+
+func clipImageFace(buf *bytes.Buffer, loc proxy.LocationInfo) (string, error) {
+	if buf == nil {
+		return "", errors.New("the buf is nil")
+	}
+	origin, err := decodeImage(buf.Bytes(), int(loc.Width), int(loc.Height))
+	if err != nil {
+		return "", err
+	}
+	wid := int(loc.Width)
+	hei := int(loc.Height)
+	if wid == 0 || hei == 0 {
+		wid = origin.Bounds().Max.X
+		hei = origin.Bounds().Max.Y
+	}
+	//img := origin.(*image.YCbCr)
+	//subImg := img.SubImage(image.Rect(int(loc.Left), int(loc.Top), wid, hei))
+	//subImg := img.SubImage(image.Rect(100, 300, wid, hei))
+	left := int(loc.Left) - 20
+	if left < 1 {
+		left = 1
+	}
+	top := int(loc.Top) - 60
+	if top < 1 {
+		top = 1
+	}
+	subImg := imaging.Crop(origin, image.Rect(left, top, left+wid+50, top+hei+50))
+	subBuf := bytes.NewBuffer(nil)
+	err = jpeg.Encode(subBuf, subImg, &jpeg.Options{100})
+	if err != nil {
+		return "", err
+	}
+	data := base64.StdEncoding.EncodeToString(subBuf.Bytes())
+	return data, nil
+}
+
+func decodeImage(bts []byte, wid, hei int) (image.Image, error) {
+	reader := bytes.NewReader(bts)
+	cfg, format, err := image.DecodeConfig(reader)
+	if err != nil {
+		return nil, err
+	}
+	if cfg.Width < wid || cfg.Height < hei {
+		return nil, errors.New("the image width or height is limited")
+	}
+	reader.Seek(0, 0)
+	var img image.Image
+	if format == "png" {
+		img, err = png.Decode(reader)
+	} else if format == "jpeg" || format == "jpg" {
+		img, err = jpeg.Decode(reader)
+	} else if format == "bmp" {
+		img, err = bmp.Decode(reader)
+	} else if format == "gif" {
+		img, err = gif.Decode(reader)
+	} else if format == "webp" {
+		img, err = webp.Decode(reader)
+	} else {
+		err = errors.New("the image format not support of " + format)
+	}
+	if err != nil {
+		return nil, err
+	}
+	return img, nil
+}
+
 //* Clip 图片裁剪
 //* 入参:图片输入、输出、缩略图宽、缩略图高、Rectangle{Pt(x0, y0), Pt(x1, y1)}，精度
 //* 规则:如果精度为0则精度保持不变
 //*
 //* 返回:error
 // */
-func Clip(in io.Reader, out io.Writer, wi, hi, x0, y0, x1, y1, quality int) (data string, err error) {
+func ClipImage(in io.Reader, out io.Writer, wi, hi, x0, y0, x1, y1, quality int) (data string, err error) {
 	err = errors.New("unknow error")
 	defer func() {
 		if r := recover(); r != nil {
@@ -87,7 +193,7 @@ func Clip(in io.Reader, out io.Writer, wi, hi, x0, y0, x1, y1, quality int) (dat
 * 规则: 如果width 或 hight其中有一个为0，则大小不变 如果精度为0则精度保持不变
 * 返回:缩略图真实宽、高、error
  */
-func Scale(in io.Reader, out io.Writer, width, height, quality int) (int, int, error) {
+func ScaleImage(in io.Reader, out io.Writer, width, height, quality int) (int, int, error) {
 	defer func() {
 		if r := recover(); r != nil {
 			log.Println(r)

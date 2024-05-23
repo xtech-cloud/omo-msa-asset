@@ -96,7 +96,8 @@ func (mine *cacheContext) CreateAsset(info *AssetInfo) error {
 		info.UID = db.UID.Hex()
 		info.ID = db.ID
 		info.Created = db.Created
-		go validateAsset(info.UID, info.getMinURL())
+		key, url := info.getMinURL()
+		go validateAsset(info.ID, info.UID, key, url)
 	}
 	return err
 }
@@ -321,7 +322,8 @@ func (mine *AssetInfo) initInfo(db *nosql.Asset) {
 	mine.Links = db.Links
 	mine.Code = db.Code
 	if mine.Code < 1 {
-		go validateAsset(mine.UID, mine.getMinURL())
+		key, url := mine.getMinURL()
+		go validateAsset(mine.ID, mine.UID, key, url)
 	}
 }
 
@@ -350,11 +352,11 @@ func (mine *AssetInfo) Remove(operator string) error {
 	return err
 }
 
-func (mine *AssetInfo) getMinURL() string {
+func (mine *AssetInfo) getMinURL() (string, string) {
 	if mine.Snapshot != "" {
-		return mine.getURL(mine.Snapshot, true)
+		return mine.Snapshot, GetURL(mine.Snapshot, true)
 	} else {
-		return mine.getURL(mine.UUID, true)
+		return mine.UUID, GetURL(mine.UUID, true)
 	}
 }
 
@@ -487,7 +489,7 @@ func (mine *AssetInfo) UpdateLanguage(lan, operator string) error {
 	return err
 }
 
-func (mine *AssetInfo) getURL(key string, cdn bool) string {
+func GetURL(key string, cdn bool) string {
 	if len(key) < 2 {
 		return ""
 	}
@@ -506,27 +508,27 @@ func (mine *AssetInfo) getURL(key string, cdn bool) string {
 			return storage.MakePublicURL(domain, key)
 		}
 	} else {
-		return mine.UID
+		return ""
 	}
 }
 
 func (mine *AssetInfo) URL() string {
-	return mine.getURL(mine.UUID, true)
+	return GetURL(mine.UUID, true)
 }
 
 func (mine *AssetInfo) SourceURL() string {
 	if mine.Snapshot != "" {
-		return mine.getURL(mine.Snapshot, false)
+		return GetURL(mine.Snapshot, false)
 	}
-	return mine.getURL(mine.UUID, false)
+	return GetURL(mine.UUID, false)
 }
 
 func (mine *AssetInfo) SnapshotURL() string {
-	return mine.getURL(mine.Snapshot, true)
+	return GetURL(mine.Snapshot, true)
 }
 
 func (mine *AssetInfo) SmallImageURL() string {
-	return mine.getURL(mine.Small, false)
+	return GetURL(mine.Small, false)
 }
 
 func (mine *AssetInfo) HadThumbByFace(face string) bool {
@@ -584,7 +586,7 @@ func (mine *AssetInfo) CreateThumb(face, url, operator, owner string, score, sim
 	db.Creator = operator
 	db.Operator = operator
 	db.FaceID = face
-	db.URL = url
+	db.File = url
 	db.Asset = mine.UID
 	db.Blur = blur
 	db.Owner = owner
