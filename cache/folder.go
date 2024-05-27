@@ -200,6 +200,33 @@ func (mine *FolderInfo) UpdateCover(operator, cover string) error {
 	return err
 }
 
+func (mine *FolderInfo) HadContent(key string) bool {
+	for _, content := range mine.Contents {
+		if content.Key == key {
+			return true
+		}
+	}
+	return false
+}
+
+func (mine *FolderInfo) AppendContent(key, value, operator string) error {
+	if mine.HadContent(key) {
+		return nil
+	}
+	all := make([]*proxy.PairInfo, 0, len(mine.Contents)+1)
+	all = append(all, &proxy.PairInfo{
+		Key:   key,
+		Value: value,
+		Count: 0,
+	})
+	err := nosql.UpdateFolderContents(mine.UID, operator, all)
+	if err == nil {
+		mine.Contents = all
+		mine.Operator = operator
+	}
+	return err
+}
+
 func (mine *FolderInfo) UpdateContents(operator string, list []*pb.PairInfo) error {
 	arr := make([]*proxy.PairInfo, 0, len(list))
 	for _, pair := range list {

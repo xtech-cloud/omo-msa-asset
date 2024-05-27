@@ -23,14 +23,14 @@ type Thumb struct {
 	Operator    string             `json:"operator" bson:"operator"`
 
 	Owner    string             `json:"owner" bson:"owner"`
-	FaceID   string             `json:"face" bson:"face"`
 	Probably float32            `json:"probably" bson:"probably"`
 	Blur     float32            `json:"blur" bson:"blur"`
 	File     string             `json:"file" bson:"file"` //远程文件名
 	Asset    string             `json:"asset" bson:"asset"`
 	Similar  float32            `json:"similar" bson:"similar"`
 	Meta     string             `json:"meta" bson:"meta"`
-	Token    string             `json:"token" bson:"token"`
+	User     string             `json:"user" bson:"user"`
+	Quote    string             `json:"quote" bson:"quote"`
 	Location proxy.LocationInfo `json:"location" bson:"location"`
 }
 
@@ -109,6 +109,24 @@ func GetThumbsByOwner(owner string) ([]*Thumb, error) {
 	return items, nil
 }
 
+func GetThumbsByQuote(quote string) ([]*Thumb, error) {
+	var items = make([]*Thumb, 0, 20)
+	filter := bson.M{"quote": quote, TimeDeleted: 0}
+	cursor, err1 := findMany(TableThumbs, filter, 0)
+	if err1 != nil {
+		return nil, err1
+	}
+	for cursor.Next(context.Background()) {
+		var node = new(Thumb)
+		if err := cursor.Decode(&node); err != nil {
+			return nil, err
+		} else {
+			items = append(items, node)
+		}
+	}
+	return items, nil
+}
+
 func GetThumbsByAsset(asset string) ([]*Thumb, error) {
 	var items = make([]*Thumb, 0, 20)
 	filter := bson.M{"asset": asset, TimeDeleted: 0}
@@ -129,7 +147,7 @@ func GetThumbsByAsset(asset string) ([]*Thumb, error) {
 
 func UpdateThumbBase(uid, owner string, similar float32) error {
 	if len(uid) < 2 {
-		return errors.New("db asset uid is empty of GetAsset")
+		return errors.New("db thumb uid is empty of UpdateThumbBase")
 	}
 
 	msg := bson.M{"owner": owner, "similar": similar, TimeUpdated: time.Now().Unix()}
@@ -139,10 +157,20 @@ func UpdateThumbBase(uid, owner string, similar float32) error {
 
 func UpdateThumbMeta(uid, meta, operator string) error {
 	if len(uid) < 2 {
-		return errors.New("db asset uid is empty of GetAsset")
+		return errors.New("db thumb uid is empty of GetAsset")
 	}
 
 	msg := bson.M{"meta": meta, "operator": operator, TimeUpdated: time.Now().Unix()}
+	_, err := updateOne(TableThumbs, uid, msg)
+	return err
+}
+
+func UpdateThumbUser(uid, user, operator string) error {
+	if len(uid) < 2 {
+		return errors.New("db thumb uid is empty of GetAsset")
+	}
+
+	msg := bson.M{"user": user, "operator": operator, TimeUpdated: time.Now().Unix()}
 	_, err := updateOne(TableThumbs, uid, msg)
 	return err
 }

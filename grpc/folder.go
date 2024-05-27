@@ -152,6 +152,8 @@ func (mine *FolderService) UpdateByFilter(ctx context.Context, in *pb.RequestUpd
 		err = folder.UpdateParent(in.Operator, in.Value)
 	} else if in.Field == "cover" {
 		err = folder.UpdateCover(in.Operator, in.Value)
+	} else if in.Field == "append" {
+		err = folder.AppendContent(in.Value, "", in.Operator)
 	}
 	if err != nil {
 		out.Status = outError(path, err.Error(), pb.ResultStatus_DBException)

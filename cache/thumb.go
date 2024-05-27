@@ -1,8 +1,11 @@
 package cache
 
 import (
+	"errors"
+	"fmt"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"omo.msa.asset/proxy/nosql"
+	"omo.msa.asset/tool"
 	"time"
 )
 
@@ -17,22 +20,24 @@ type ThumbInfo struct {
 	Creator  string
 	Operator string
 
+	Face  string
 	File  string
 	Owner string
 	Asset string
-	Face  string
 	Meta  string
-	Token string
+	User  string
+	Quote string
 }
 
-func CreateThumb(asset, key, owner, bs64, operator string, info *ImageFace) (*ThumbInfo, error) {
+func CreateThumb(asset, key, owner, bs64, quote, operator string, info *DetectFace) (*ThumbInfo, error) {
 	db := new(nosql.Thumb)
 	db.UID = primitive.NewObjectID()
 	db.ID = nosql.GetThumbNextID()
 	db.Created = time.Now().Unix()
 	db.Creator = operator
 	db.Operator = operator
-	db.Token = info.Token
+	db.User = ""
+	db.Quote = quote
 	db.File = key
 	db.Asset = asset
 	db.Blur = info.Quality.Blur
@@ -50,6 +55,25 @@ func CreateThumb(asset, key, owner, bs64, operator string, info *ImageFace) (*Th
 	return nil, err
 }
 
+func (mine *cacheContext) GetUserThumbsByQuote(quote string) []*ThumbInfo {
+	dbs, err := nosql.GetThumbsByQuote(quote)
+	if err != nil {
+		return nil
+	}
+	list := make([]*ThumbInfo, 0, len(dbs))
+	users := make([]string, 0, len(dbs))
+	for _, db := range dbs {
+		if !tool.HasItem(users, db.User) {
+			users = append(users, db.User)
+			info := new(ThumbInfo)
+			info.initInfo(db)
+			list = append(list, info)
+		}
+	}
+
+	return list
+}
+
 func (mine *ThumbInfo) initInfo(db *nosql.Thumb) {
 	mine.ID = db.ID
 	mine.UID = db.UID.Hex()
@@ -60,11 +84,11 @@ func (mine *ThumbInfo) initInfo(db *nosql.Thumb) {
 	mine.Probably = db.Probably
 	mine.Similar = db.Similar
 	mine.Blur = db.Blur
-	mine.Face = db.FaceID
 	mine.Creator = db.Creator
 	mine.Operator = db.Operator
 	mine.Meta = db.Meta
-	mine.Token = db.Token
+	mine.User = db.User
+	mine.Quote = db.Quote
 	mine.File = db.File
 }
 
@@ -77,10 +101,81 @@ func (mine *ThumbInfo) UpdateBase(owner string, similar float32) error {
 	return err
 }
 
+//从人脸库里面搜索相似人脸的用户
+func (mine *ThumbInfo) SearchUsers() ([]*UserResult, error) {
+	req := new(FaceSearchReq)
+	req.Type = ImageTypeBase64
+	req.Image = mine.Meta
+	req.Groups = FaceGroupDefault
+	req.Quality = QualityNone
+	req.MaxUser = 10
+	req.Threshold = 80
+	result, err := searchFaceByOne(req)
+	if err != nil {
+		return nil, err
+	}
+	return result.Users, nil
+}
+
+//人脸认证：当前人脸和指定的用户的人脸是否一致
+func (mine *ThumbInfo) Identification(user string) (*UserResult, error) {
+	req := new(FaceSearchReq)
+	req.Type = ImageTypeBase64
+	req.Image = mine.Meta
+	req.Groups = FaceGroupDefault
+	req.Quality = QualityNone
+	req.MaxUser = 1
+	req.User = user
+	req.Threshold = 80
+	result, err := searchFaceByOne(req)
+	if err != nil {
+		return nil, err
+	}
+	if len(result.Users) < 1 {
+		return nil, nil
+	}
+	return result.Users[0], nil
+}
+
+//把该人脸注册到人脸数据库中
+func (mine *ThumbInfo) RegisterFace(user, group string) error {
+	if len(group) < 1 {
+		return errors.New("the group is empty")
+	}
+	id := user
+	if len(id) < 2 {
+		id = fmt.Sprintf("temp_%d", mine.ID)
+	}
+	req := new(FaceAddReq)
+	req.Type = ImageTypeBase64
+	req.Image = mine.Meta
+	req.Group = group
+	req.User = id
+	req.Quality = QualityNone
+	req.Meta = fmt.Sprintf(`"user":"%s", "thumb":"%s"`, id, mine.UID)
+	_, err := registerUserFace(req)
+	if err != nil {
+		return err
+	}
+	if len(mine.User) < 2 {
+		_ = mine.UpdateUser(id, mine.Operator)
+	}
+	return nil
+}
+
 func (mine *ThumbInfo) UpdateInfo(meta, operator string) error {
 	err := nosql.UpdateThumbMeta(mine.UID, meta, operator)
 	if err == nil {
 		mine.Meta = meta
+		mine.Operator = operator
+	}
+	return err
+}
+
+func (mine *ThumbInfo) UpdateUser(user, operator string) error {
+	err := nosql.UpdateThumbUser(mine.UID, user, operator)
+	if err == nil {
+		mine.User = user
 		mine.Operator = operator
 	}
 	return err

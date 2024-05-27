@@ -27,7 +27,8 @@ func switchAsset(owner string, info *cache.AssetInfo) *pb.AssetInfo {
 	}
 
 	tmp.Language = info.Language
-	tmp.Type = pb.OwnerType(info.Type)
+	tmp.Type = uint32(info.Type)
+	tmp.Scope = uint32(info.Scope)
 	tmp.Size = info.Size
 	tmp.Url = info.URL()
 	tmp.Format = info.Format
@@ -60,7 +61,7 @@ func switchThumbBrief(info *cache.ThumbInfo) *pb.ThumbBrief {
 	tmp.Owner = info.Owner
 	tmp.Face = info.Face
 	tmp.Blur = info.Blur
-	tmp.Url = info.URL
+	//tmp.Url = info.URL
 	tmp.Similar = info.Similar
 	tmp.Probably = info.Probably
 	return tmp
@@ -73,25 +74,8 @@ func (mine *AssetService) AddOne(ctx context.Context, in *pb.ReqAssetAdd, out *p
 		out.Status = outError(path, "the owner is empty", pb.ResultStatus_Empty)
 		return nil
 	}
-	info := new(cache.AssetInfo)
-	info.Name = in.Name
-	info.MD5 = in.Md5
-	info.Format = in.Format
-	info.Version = in.Version
-	info.Owner = in.Owner
-	info.Type = uint8(in.Type)
-	info.UUID = in.Uuid
-	info.Size = in.Size
-	info.Language = in.Language
-	info.Creator = in.Operator
-	info.Small = in.Small
-	info.Snapshot = in.Snapshot
-	info.Width = in.Width
-	info.Height = in.Height
-	info.Meta = in.Meta
-	info.Remark = in.Remark
-	info.Quote = in.Quote
-	err := cache.Context().CreateAsset(info)
+
+	info, err := cache.Context().CreateAsset(in)
 	if err != nil {
 		out.Status = outError(path, err.Error(), pb.ResultStatus_DBException)
 		return nil
@@ -381,6 +365,8 @@ func (mine *AssetService) UpdateByFilter(ctx context.Context, in *pb.RequestUpda
 			err = cache.Context().UpdateAssetsStatus(in.Values, uint32(st), in.Operator)
 		} else if in.Field == "publish" {
 			err = cache.Context().PublishAssetsEntity(in.Value, in.Operator)
+		} else if in.Field == "batch_scope" {
+			err = cache.Context().BatchUpdateScope(in.Values)
 		} else {
 			out.Status = outError(path, "not define the field", pb.ResultStatus_DBException)
 			return nil

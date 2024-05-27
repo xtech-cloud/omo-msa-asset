@@ -4,6 +4,7 @@ import (
 	"errors"
 	"github.com/qiniu/api.v7/v7/auth/qbox"
 	"github.com/qiniu/api.v7/v7/storage"
+	pb "github.com/xtech-cloud/omo-msp-asset/proto/asset"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"omo.msa.asset/config"
 	"omo.msa.asset/proxy/nosql"
@@ -20,6 +21,13 @@ const (
 	AssetTypeVideo        = 5
 	AssetTypePortrait     = 6 //系统头像
 	AssetTypeIcon         = 7 //图标库
+	AssetTypeCertify      = 8 //证书
+)
+
+const (
+	AssetScopePersonal = 0
+	AssetScopeOrg      = 1
+	AssetScopeSystem   = 2
 )
 
 const UP_QINIU = "qiniu"
@@ -33,6 +41,7 @@ const (
 type AssetInfo struct {
 	Type     uint8
 	Status   uint8
+	Scope    uint8
 	Width    uint32
 	Height   uint32
 	Weight   uint32
@@ -49,7 +58,7 @@ type AssetInfo struct {
 	Operator string
 
 	Owner    string
-	UUID     string
+	UUID     string //file 云存储文件名
 	Version  string
 	Format   string
 	MD5      string
@@ -62,23 +71,24 @@ type AssetInfo struct {
 	Small string
 
 	Links []string
+	Tags  []string
 }
 
-func (mine *cacheContext) CreateAsset(info *AssetInfo) error {
+func (mine *cacheContext) CreateAsset(info *pb.ReqAssetAdd) (*AssetInfo, error) {
 	db := new(nosql.Asset)
 	db.UID = primitive.NewObjectID()
 	db.ID = nosql.GetAssetNextID()
 	db.Created = time.Now().Unix()
-	db.Creator = info.Creator
+	db.Creator = info.Operator
 	db.Operator = info.Operator
 	db.Name = info.Name
 	db.Remark = info.Remark
 	db.Owner = info.Owner
-	db.Type = info.Type
+	db.Type = uint8(info.Type)
 	db.Size = info.Size
-	db.UUID = info.UUID
+	db.UUID = info.Uuid
 	db.Format = info.Format
-	db.MD5 = info.MD5
+	db.MD5 = info.Md5
 	db.Version = info.Version
 	db.Language = info.Language
 	db.Snapshot = info.Snapshot
@@ -87,19 +97,26 @@ func (mine *cacheContext) CreateAsset(info *AssetInfo) error {
 	db.Height = info.Height
 	db.Meta = info.Meta
 	db.Weight = 0
+	db.Tags = info.Tags
+	db.Scope = uint8(info.Scope)
 	db.Quote = info.Quote
 	db.Status = StatusPrivate
-	db.Links = info.Links
+	db.Links = make([]string, 0, 1)
+	db.Meta = info.Meta
+	if db.Tags == nil {
+		db.Tags = make([]string, 0, 1)
+	}
 
 	err := nosql.CreateAsset(db)
 	if err == nil {
-		info.UID = db.UID.Hex()
-		info.ID = db.ID
-		info.Created = db.Created
-		key, url := info.getMinURL()
-		go validateAsset(info.ID, info.UID, key, url)
+		tmp := new(AssetInfo)
+		tmp.initInfo(db)
+		if tmp.SupportFace() {
+			go validateAsset(tmp)
+		}
+		return tmp, nil
 	}
-	return err
+	return nil, err
 }
 
 func (mine *cacheContext) GetAsset(uid string) *AssetInfo {
@@ -233,6 +250,17 @@ func (mine *cacheContext) PublishAssetsEntity(entity, operator string) error {
 	return nil
 }
 
+func (mine *cacheContext) BatchUpdateScope(list []string) error {
+	for _, owner := range list {
+		assets, _ := nosql.GetAssetsByOwner(owner)
+		for _, asset := range assets {
+			_ = nosql.UpdateAssetScope(asset.UID.Hex(), asset.Operator, uint8(AssetScopeOrg))
+		}
+	}
+
+	return nil
+}
+
 func (mine *cacheContext) GetAssetsByRegex(key string, from, to int64) []*AssetInfo {
 	array, err := nosql.GetAssetsByRegex(key, from, to)
 	if err != nil {
@@ -306,6 +334,7 @@ func (mine *AssetInfo) initInfo(db *nosql.Asset) {
 	mine.Size = db.Size
 	mine.UUID = db.UUID
 	mine.Type = db.Type
+	mine.Scope = db.Scope
 	mine.Owner = db.Owner
 	mine.Version = db.Version
 	mine.MD5 = db.MD5
@@ -320,10 +349,10 @@ func (mine *AssetInfo) initInfo(db *nosql.Asset) {
 	mine.Weight = db.Weight
 	mine.Status = db.Status
 	mine.Links = db.Links
+	mine.Tags = db.Tags
 	mine.Code = db.Code
-	if mine.Code < 1 {
-		key, url := mine.getMinURL()
-		go validateAsset(mine.ID, mine.UID, key, url)
+	if mine.Code == 0 && mine.SupportFace() {
+		go validateAsset(mine)
 	}
 }
 
@@ -358,6 +387,20 @@ func (mine *AssetInfo) getMinURL() (string, string) {
 	} else {
 		return mine.UUID, GetURL(mine.UUID, true)
 	}
+}
+
+func (mine *AssetInfo) SupportFace() bool {
+	if mine.Type > AssetTypeWindowModel {
+		return false
+	}
+	arr := []string{"png", "jpg", "jpeg", "bmp"}
+	for _, s := range arr {
+		format := strings.ToLower(mine.Format)
+		if strings.Contains(format, s) {
+			return true
+		}
+	}
+	return false
 }
 
 func (mine *AssetInfo) ToRecycle(operator string) error {
@@ -574,19 +617,14 @@ func (mine *AssetInfo) RemoveThumb(uid, operator string) error {
 	return nosql.RemoveThumb(uid, operator)
 }
 
-func (mine *AssetInfo) CreateThumb(face, url, operator, owner string, score, similar, blur float32) (*ThumbInfo, error) {
-	t := mine.GetThumbByFace(face)
-	if t != nil {
-		return t, nil
-	}
+func (mine *AssetInfo) CreateThumb(file, operator, owner string, score, similar, blur float32) (*ThumbInfo, error) {
 	db := new(nosql.Thumb)
 	db.UID = primitive.NewObjectID()
 	db.ID = nosql.GetThumbNextID()
 	db.Created = time.Now().Unix()
 	db.Creator = operator
 	db.Operator = operator
-	db.FaceID = face
-	db.File = url
+	db.File = file
 	db.Asset = mine.UID
 	db.Blur = blur
 	db.Owner = owner

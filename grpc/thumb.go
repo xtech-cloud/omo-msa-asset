@@ -20,11 +20,12 @@ func switchThumb(info *cache.ThumbInfo) *pb.ThumbInfo {
 	tmp.Owner = info.Owner
 	tmp.Asset = info.Asset
 	tmp.Probably = info.Probably
-	tmp.Face = info.Face
 	tmp.Url = cache.GetURL(info.File, true)
 	tmp.Blur = info.Blur
 	tmp.Similar = info.Similar
 	tmp.Meta = info.Meta
+	tmp.User = info.User
+	tmp.Quote = info.Quote
 	return tmp
 }
 
@@ -41,11 +42,11 @@ func (mine *ThumbService) AddOne(ctx context.Context, in *pb.ReqThumbAdd, out *p
 		out.Status = outError(path, "not found the asset", pb.ResultStatus_NotExisted)
 		return nil
 	}
-	if asset.HadThumbByFace(in.Face) {
-		out.Status = outError(path, "the face repeated", pb.ResultStatus_Repeated)
-		return nil
-	}
-	info, err := asset.CreateThumb(in.Face, in.Url, in.Operator, in.Owner, in.Probably, in.Similar, in.Blur)
+	//if asset.HadThumbByFace(in.Face) {
+	//	out.Status = outError(path, "the face repeated", pb.ResultStatus_Repeated)
+	//	return nil
+	//}
+	info, err := asset.CreateThumb(in.Url, in.Operator, in.Owner, in.Probably, in.Similar, in.Blur)
 	if err != nil {
 		out.Status = outError(path, err.Error(), pb.ResultStatus_DBException)
 		return nil
@@ -78,7 +79,7 @@ func (mine *ThumbService) GetOne(ctx context.Context, in *pb.RequestInfo, out *p
 		return nil
 	}
 	out.Info = switchThumb(thumb)
-	out.Status = outLog(path, out)
+	out.Status = outLog(path, out.Info.Uid)
 	return nil
 }
 
@@ -205,10 +206,14 @@ func (mine *ThumbService) UpdateByFilter(ctx context.Context, in *pb.RequestUpda
 func (mine *ThumbService) GetByFilter(ctx context.Context, in *pb.RequestFilter, out *pb.ReplyThumbList) error {
 	path := "thumb.getByFilter"
 	inLog(path, in)
-	if len(in.Uid) < 2 {
-		out.Status = outError(path, "the uid is empty", pb.ResultStatus_Empty)
-		return nil
+	var list []*cache.ThumbInfo
+	if in.Key == "quote_users" {
+		list = cache.Context().GetUserThumbsByQuote(in.Value)
 	}
-	out.Status = outLog(path, out)
+	out.List = make([]*pb.ThumbInfo, 0, len(list))
+	for _, item := range list {
+		out.List = append(out.List, switchThumb(item))
+	}
+	out.Status = outLog(path, fmt.Sprintf("the length = %d", len(out.List)))
 	return nil
 }

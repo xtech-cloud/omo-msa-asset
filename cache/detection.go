@@ -11,21 +11,21 @@ import (
 	"strings"
 )
 
-type FaceResponse struct {
-	Code      int          `json:"error_code"`
-	Message   string       `json:"error_msg"`
-	LogID     int          `json:"log_id"`
-	Timestamp int          `json:"timestamp"`
-	Cached    int          `json:"cached"`
-	Result    *FacesResult `json:"result"`
+type DetectFaceResponse struct {
+	Code      int                `json:"error_code"`
+	Message   string             `json:"error_msg"`
+	LogID     int                `json:"log_id"`
+	Timestamp int                `json:"timestamp"`
+	Cached    int                `json:"cached"`
+	Result    *DetectFacesResult `json:"result"`
 }
 
-type FacesResult struct {
-	Number int          `json:"face_num"`
-	List   []*ImageFace `json:"face_list"`
+type DetectFacesResult struct {
+	Number int           `json:"face_num"`
+	List   []*DetectFace `json:"face_list"`
 }
 
-type ImageFace struct {
+type DetectFace struct {
 	Token       string  `json:"face_token"`
 	Probability float32 `json:"face_probability"`
 	Age         int     `json:"age"`
@@ -118,7 +118,7 @@ func httpPost(address, data string) ([]byte, error) {
 }
 
 //检测图片中的人脸
-func detectFaces(img string) (*FaceResponse, error) {
+func detectFaces(img string) (*DetectFaceResponse, error) {
 	token, er := getDetectAccessToken()
 	if er != nil {
 		return nil, er
@@ -130,7 +130,7 @@ func detectFaces(img string) (*FaceResponse, error) {
 		return nil, er
 	}
 	fmt.Println(string(bts))
-	reply := new(FaceResponse)
+	reply := new(DetectFaceResponse)
 	er = json.Unmarshal(bts, reply)
 	if reply.Code > 0 {
 		return nil, errors.New(reply.Message)

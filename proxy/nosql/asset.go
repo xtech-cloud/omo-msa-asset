@@ -23,6 +23,7 @@ type Asset struct {
 
 	Status   uint8    `json:"status" bson:"status"`
 	Type     uint8    `json:"type" bson:"type"`
+	Scope    uint8    `json:"scope" bson:"scope"`
 	Code     int      `json:"code" bson:"code"`
 	Owner    string   `json:"owner" bson:"owner"`
 	Size     uint64   `json:"size" bson:"size"`
@@ -40,6 +41,7 @@ type Asset struct {
 	Height   uint32   `json:"height" bson:"height"`
 	Quote    string   `json:"quote" bson:"quote"`
 	Links    []string `json:"links" bson:"links"`
+	Tags     []string `json:"tags" bson:"tags"`
 }
 
 func CreateAsset(info *Asset) error {
@@ -179,6 +181,16 @@ func UpdateAssetStatus(uid, operator string, status uint8) error {
 	}
 
 	msg := bson.M{"status": status, "operator": operator, TimeUpdated: time.Now().Unix()}
+	_, err := updateOne(TableAssets, uid, msg)
+	return err
+}
+
+func UpdateAssetScope(uid, operator string, scope uint8) error {
+	if len(uid) < 2 {
+		return errors.New("db asset uid is empty of UpdateAssetWeight")
+	}
+
+	msg := bson.M{"scope": scope, "operator": operator, TimeUpdated: time.Now().Unix()}
 	_, err := updateOne(TableAssets, uid, msg)
 	return err
 }

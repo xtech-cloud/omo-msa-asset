@@ -18,7 +18,25 @@ import (
 	"omo.msa.asset/proxy"
 )
 
-func clipFaces(asset, key, owner, url, operator string, info *FaceResponse) error {
+func clipAssetFaces(uid, operator string) error {
+	asset := cacheCtx.GetAsset(uid)
+	if asset == nil {
+		return errors.New("not found the asset")
+	}
+	key, url := asset.getMinURL()
+	resp, er := detectFaces(url)
+	if er != nil {
+		return er
+	}
+
+	group := FaceGroupDefault
+	if asset.Scope == AssetScopeOrg {
+		group = asset.Owner
+	}
+	return clipFaces(asset.UID, key, asset.Owner, url, group, asset.Quote, operator, resp)
+}
+
+func clipFaces(asset, key, owner, url, group, quote, operator string, info *DetectFaceResponse) error {
 	size, buf, err := downloadAsset(url)
 	if err != nil {
 		return err
@@ -34,9 +52,19 @@ func clipFaces(asset, key, owner, url, operator string, info *FaceResponse) erro
 		if er != nil {
 			return er
 		}
-		_, er1 := CreateThumb(asset, key, owner, bs64, operator, face)
+		thumb, er1 := CreateThumb(asset, key, owner, bs64, quote, operator, face)
 		if er1 != nil {
 			return er1
+		}
+		users, er := thumb.SearchUsers()
+		if er == nil {
+			if len(users) > 0 {
+				for _, user := range users {
+					thumb.RegisterFace(user.ID, user.Group)
+				}
+			} else {
+				thumb.RegisterFace(thumb.User, group)
+			}
 		}
 	}
 	return nil

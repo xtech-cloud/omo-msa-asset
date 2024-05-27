@@ -7,22 +7,27 @@ import (
 	"github.com/tidwall/gjson"
 	"omo.msa.asset/config"
 	"omo.msa.asset/proxy"
+	"omo.msa.asset/tool"
 )
 
 const (
-	QualityNone   = "none"
-	QualityLow    = "low"
-	QualityNormal = "normal"
-	QualityHigh   = "high"
+	QualityNone   = "NONE"
+	QualityLow    = "LOW"
+	QualityNormal = "NORMAL"
+	QualityHigh   = "HIGH"
 )
 
 const (
-	LiveNone = "none"
+	LiveNone = "NONE"
 )
 
 const (
-	ImageTypeBase64 = "base64"
-	ImageTypeFace   = "face_token"
+	ImageTypeBase64 = "BASE64"
+	ImageTypeFace   = "FACE_TOKEN"
+)
+
+const (
+	FaceGroupDefault = "default_users"
 )
 
 type FaceSearchReq struct {
@@ -30,7 +35,7 @@ type FaceSearchReq struct {
 	Type      string `json:"image_type"`
 	Groups    string `json:"group_id_list"` //用户组列表，多个就用逗号分割
 	Quality   string `json:"quality_control"`
-	User      string `json:"user_id"`
+	User      string `json:"user_id"`         //如果指定该字段，则是人脸认证
 	MaxUser   int    `json:"max_user_num"`    //返回的用户数量[1,50]，默认1
 	Threshold int    `json:"match_threshold"` //匹配阈值[0, 100]，默认80
 }
@@ -75,7 +80,7 @@ type UserListResp struct {
 	Users []*UserResult `json:"user_list"`
 }
 
-type UserAddReq struct {
+type FaceAddReq struct {
 	Image   string `json:"image"`
 	Type    string `json:"image_type"`
 	Group   string `json:"group_id"`
@@ -84,7 +89,7 @@ type UserAddReq struct {
 	Quality string `json:"quality_control"`
 }
 
-func searchByOneFace(info *FaceSearchReq) (*FaceSearchResponse, error) {
+func searchFaceByOne(info *FaceSearchReq) (*FaceSearchResponse, error) {
 	token, er := getDetectAccessToken()
 	if er != nil {
 		return nil, er
@@ -103,7 +108,7 @@ func searchByOneFace(info *FaceSearchReq) (*FaceSearchResponse, error) {
 	return reply, er
 }
 
-func searchByMultiFace(info *FaceSearchReq) (*FaceMultiSearchResp, error) {
+func searchFaceByMulti(info *FaceSearchReq) (*FaceMultiSearchResp, error) {
 	token, er := getDetectAccessToken()
 	if er != nil {
 		return nil, er
@@ -122,7 +127,7 @@ func searchByMultiFace(info *FaceSearchReq) (*FaceMultiSearchResp, error) {
 	return reply, er
 }
 
-func registerUserFace(info *UserAddReq) (*ImageFaceResult, error) {
+func registerUserFace(info *FaceAddReq) (*ImageFaceResult, error) {
 	token, er := getDetectAccessToken()
 	if er != nil {
 		return nil, er
@@ -146,7 +151,7 @@ func registerUserFace(info *UserAddReq) (*ImageFaceResult, error) {
 	return reply, er
 }
 
-func updateUserFace(info *UserAddReq) (*ImageFaceResult, error) {
+func updateUserFace(info *FaceAddReq) (*ImageFaceResult, error) {
 	token, er := getDetectAccessToken()
 	if er != nil {
 		return nil, er
@@ -170,7 +175,7 @@ func updateUserFace(info *UserAddReq) (*ImageFaceResult, error) {
 	return reply, er
 }
 
-func createUserGroup(uid string) error {
+func createFaceGroup(uid string) error {
 	token, er := getDetectAccessToken()
 	if er != nil {
 		return er
@@ -189,7 +194,7 @@ func createUserGroup(uid string) error {
 	return nil
 }
 
-func removeUserGroup(uid string) error {
+func removeFaceGroup(uid string) error {
 	token, er := getDetectAccessToken()
 	if er != nil {
 		return er
@@ -208,7 +213,7 @@ func removeUserGroup(uid string) error {
 	return nil
 }
 
-func getUserGroups() ([]string, error) {
+func getFaceGroups() ([]string, error) {
 	token, er := getDetectAccessToken()
 	if er != nil {
 		return nil, er
@@ -256,7 +261,15 @@ func getUsersByGroup(group string) ([]string, error) {
 	return list, er
 }
 
-func getUserFacesByGroup(group, user string) (*FaceListResp, error) {
+func getUserCountByGroup(group string) int {
+	list, err := getUsersByGroup(group)
+	if err != nil {
+		return -1
+	}
+	return len(list)
+}
+
+func getFacesByGroup(group, user string) (*FaceListResp, error) {
 	token, er := getDetectAccessToken()
 	if er != nil {
 		return nil, er
@@ -277,7 +290,7 @@ func getUserFacesByGroup(group, user string) (*FaceListResp, error) {
 	return reply, er
 }
 
-func getUserMetas(group, user string) (*UserListResp, error) {
+func getFaceMetas(group, user string) (*UserListResp, error) {
 	token, er := getDetectAccessToken()
 	if er != nil {
 		return nil, er
@@ -298,7 +311,7 @@ func getUserMetas(group, user string) (*UserListResp, error) {
 	return reply, er
 }
 
-func removeUserFace(log uint64, face, user, group string) error {
+func removeFace(log uint64, face, user, group string) error {
 	token, er := getDetectAccessToken()
 	if er != nil {
 		return er
@@ -315,4 +328,15 @@ func removeUserFace(log uint64, face, user, group string) error {
 		return errors.New(result.Get("error_msg").String())
 	}
 	return nil
+}
+
+func CheckFaceGroup() error {
+	list, er := getFaceGroups()
+	if er != nil {
+		return er
+	}
+	if tool.HasItem(list, FaceGroupDefault) {
+		return nil
+	}
+	return createFaceGroup(FaceGroupDefault)
 }

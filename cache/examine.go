@@ -37,7 +37,7 @@ func (mine *ExamineResult) GetStatus() int {
 		}
 		return BD_Failed
 	} else {
-		return 0
+		return -1
 	}
 }
 
@@ -58,33 +58,38 @@ func ValidateAssetUrl(uid, url string) (*ExamineResult, error) {
 	return result, nil
 }
 
-func validateAsset(asset, uid, uuid, owner, url, operator string) {
+func validateAsset(info *AssetInfo) {
+	key, url := info.getMinURL()
 	if len(url) < 1 {
 		return
 	}
-	result, err := ValidateAssetUrl(uid, url)
+	result, err := ValidateAssetUrl(key, url)
 	if err != nil {
 		logger.Warn("validate asset error that url = " + url + " and msg = " + err.Error())
 		return
 	}
 	code := result.GetStatus()
-	er := nosql.UpdateAssetCode(uid, code)
+	er := nosql.UpdateAssetCode(info.UID, code)
 	if er != nil {
-		logger.Warn("set asset code failed that uid = " + uid + " and msg = " + err.Error())
+		logger.Warn("set asset code failed that uid = " + info.UID + " and msg = " + err.Error())
 		return
 	}
 	if code == BD_Conclusion {
-		checkFaces(asset, uuid, owner, url, operator)
+		group := FaceGroupDefault
+		if info.Scope == AssetScopeOrg {
+			group = info.Owner
+		}
+		checkFaces(info.UID, key, info.Owner, url, group, info.Quote, info.Creator)
 	}
 }
 
-func checkFaces(asset, key, owner, url, operator string) {
+func checkFaces(asset, key, owner, url, group, quote, operator string) {
 	resp, er := detectFaces(url)
 	if er != nil {
 		logger.Warn(er.Error())
 		return
 	}
-	er = clipFaces(asset, key, owner, url, operator, resp)
+	er = clipFaces(asset, key, owner, url, group, quote, operator, resp)
 	if er != nil {
 		logger.Warn(er.Error())
 		return
