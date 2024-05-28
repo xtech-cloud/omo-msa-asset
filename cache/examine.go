@@ -79,17 +79,18 @@ func validateAsset(info *AssetInfo) {
 		if info.Scope == AssetScopeOrg {
 			group = info.Owner
 		}
-		checkFaces(info.UID, key, info.Owner, url, group, info.Quote, info.Creator)
+		_ = CheckFaceGroup(group)
+		checkFaces(info.UID, info.Owner, url, group, info.Quote, info.Creator)
 	}
 }
 
-func checkFaces(asset, key, owner, url, group, quote, operator string) {
+func checkFaces(asset, owner, url, group, quote, operator string) {
 	resp, er := detectFaces(url)
 	if er != nil {
 		logger.Warn(er.Error())
 		return
 	}
-	er = clipFaces(asset, key, owner, url, group, quote, operator, resp)
+	er = clipFaces(asset, owner, url, group, quote, operator, resp)
 	if er != nil {
 		logger.Warn(er.Error())
 		return

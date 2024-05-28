@@ -5,6 +5,7 @@ import (
 	pb "github.com/xtech-cloud/omo-msp-asset/proto/asset"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"omo.msa.asset/proxy/nosql"
+	"omo.msa.asset/tool"
 	"strings"
 	"time"
 )
@@ -88,6 +89,35 @@ func (mine *cacheContext) GetLabelsByScene(uid string) ([]*LabelInfo, error) {
 		info := new(LabelInfo)
 		info.initInfo(db)
 		list = append(list, info)
+	}
+
+	return list, nil
+}
+
+func (mine *cacheContext) GetLabelsByQuote(uid string) ([]*LabelInfo, error) {
+	all, err := nosql.GetLabelsByScene(DefaultScene)
+	if err != nil {
+		return nil, err
+	}
+	assets, er := nosql.GetAssetsByQuote(uid)
+	if er != nil {
+		return nil, er
+	}
+	arr := make([]string, 0, len(assets))
+	for _, asset := range assets {
+		for _, tag := range asset.Tags {
+			if !tool.HasItem(arr, tag) {
+				arr = append(arr, tag)
+			}
+		}
+	}
+	list := make([]*LabelInfo, 0, len(all))
+	for _, label := range all {
+		if tool.HasItem(arr, label.Name) {
+			tmp := new(LabelInfo)
+			tmp.initInfo(label)
+			list = append(list, tmp)
+		}
 	}
 
 	return list, nil

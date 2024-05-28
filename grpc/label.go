@@ -124,6 +124,8 @@ func (mine *LabelService) GetByFilter(ctx context.Context, in *pb.RequestFilter,
 	var list []*cache.LabelInfo
 	if in.Key == "scene" || in.Key == "" {
 		list, err = cache.Context().GetLabelsByScene(in.Owner)
+	} else if in.Key == "asset_quote" {
+		list, err = cache.Context().GetLabelsByQuote(in.Value)
 	}
 	if err != nil {
 		out.Status = outError(path, err.Error(), pb.ResultStatus_DBException)

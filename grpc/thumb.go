@@ -194,6 +194,8 @@ func (mine *ThumbService) UpdateByFilter(ctx context.Context, in *pb.RequestUpda
 	var err error
 	if in.Field == "meta" {
 		err = thumb.UpdateInfo(in.Value, in.Operator)
+	} else if in.Field == "bind" {
+		err = thumb.BindEntity(in.Value, in.Operator)
 	}
 	if err != nil {
 		out.Status = outError(path, err.Error(), pb.ResultStatus_DBException)

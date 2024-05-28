@@ -127,6 +127,24 @@ func GetThumbsByQuote(quote string) ([]*Thumb, error) {
 	return items, nil
 }
 
+func GetThumbsByUser(quote string) ([]*Thumb, error) {
+	var items = make([]*Thumb, 0, 20)
+	filter := bson.M{"user": quote, TimeDeleted: 0}
+	cursor, err1 := findMany(TableThumbs, filter, 0)
+	if err1 != nil {
+		return nil, err1
+	}
+	for cursor.Next(context.Background()) {
+		var node = new(Thumb)
+		if err := cursor.Decode(&node); err != nil {
+			return nil, err
+		} else {
+			items = append(items, node)
+		}
+	}
+	return items, nil
+}
+
 func GetThumbsByAsset(asset string) ([]*Thumb, error) {
 	var items = make([]*Thumb, 0, 20)
 	filter := bson.M{"asset": asset, TimeDeleted: 0}

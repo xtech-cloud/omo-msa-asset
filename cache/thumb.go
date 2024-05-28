@@ -29,7 +29,12 @@ type ThumbInfo struct {
 	Quote string
 }
 
-func CreateThumb(asset, key, owner, bs64, quote, operator string, info *DetectFace) (*ThumbInfo, error) {
+func CreateThumb(asset, owner, bs64, quote, operator string, bts []byte, info *DetectFace) (*ThumbInfo, error) {
+	file := tool.CreateUUID()
+	_, _, err := uploadToQiNiu(file, bts)
+	if err != nil {
+		return nil, err
+	}
 	db := new(nosql.Thumb)
 	db.UID = primitive.NewObjectID()
 	db.ID = nosql.GetThumbNextID()
@@ -38,7 +43,7 @@ func CreateThumb(asset, key, owner, bs64, quote, operator string, info *DetectFa
 	db.Operator = operator
 	db.User = ""
 	db.Quote = quote
-	db.File = key
+	db.File = file
 	db.Asset = asset
 	db.Blur = info.Quality.Blur
 	db.Owner = owner
@@ -46,7 +51,7 @@ func CreateThumb(asset, key, owner, bs64, quote, operator string, info *DetectFa
 	db.Similar = 0
 	db.Location = info.Location
 	db.Meta = bs64
-	err := nosql.CreateThumb(db)
+	err = nosql.CreateThumb(db)
 	if err == nil {
 		data := new(ThumbInfo)
 		data.initInfo(db)
@@ -102,11 +107,11 @@ func (mine *ThumbInfo) UpdateBase(owner string, similar float32) error {
 }
 
 //从人脸库里面搜索相似人脸的用户
-func (mine *ThumbInfo) SearchUsers() ([]*UserResult, error) {
+func (mine *ThumbInfo) SearchUsers(group string) ([]*UserResult, error) {
 	req := new(FaceSearchReq)
 	req.Type = ImageTypeBase64
 	req.Image = mine.Meta
-	req.Groups = FaceGroupDefault
+	req.Groups = group
 	req.Quality = QualityNone
 	req.MaxUser = 10
 	req.Threshold = 80
@@ -118,11 +123,11 @@ func (mine *ThumbInfo) SearchUsers() ([]*UserResult, error) {
 }
 
 //人脸认证：当前人脸和指定的用户的人脸是否一致
-func (mine *ThumbInfo) Identification(user string) (*UserResult, error) {
+func (mine *ThumbInfo) Identification(user, group string) (*UserResult, error) {
 	req := new(FaceSearchReq)
 	req.Type = ImageTypeBase64
 	req.Image = mine.Meta
-	req.Groups = FaceGroupDefault
+	req.Groups = group
 	req.Quality = QualityNone
 	req.MaxUser = 1
 	req.User = user
@@ -168,6 +173,20 @@ func (mine *ThumbInfo) UpdateInfo(meta, operator string) error {
 	if err == nil {
 		mine.Meta = meta
 		mine.Operator = operator
+	}
+	return err
+}
+
+func (mine *ThumbInfo) BindEntity(entity, operator string) error {
+	dbs, err := nosql.GetThumbsByUser(mine.User)
+	if err != nil {
+		return err
+	}
+	for _, db := range dbs {
+		er := nosql.UpdateThumbUser(db.UID.Hex(), entity, operator)
+		if er != nil {
+			return er
+		}
 	}
 	return err
 }

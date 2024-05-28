@@ -29,7 +29,7 @@ func InitData() error {
 		logger.Infof("the asset count = %d and the thumb count = %d", num, count)
 		//nosql.CheckTimes()
 	}
-	go CheckFaceGroup()
+	go CheckFaceGroup(FaceGroupDefault)
 	return err
 }
 
@@ -49,7 +49,7 @@ func PublishSystemAssets() {
 func TestDetectFaces() {
 	//url := "https://rdpdown.suii.cn/000c0f54-3dd7-40c6-aa2b-f67378947978"
 	//url := "https://rdpdown.suii.cn/00278e27e030ac05"
-	asset := cacheCtx.GetAsset("6654571ce182e1766ab4b012")
+	asset := cacheCtx.GetAsset("66555038d811c89afc265da0")
 	validateAsset(asset)
 }
 

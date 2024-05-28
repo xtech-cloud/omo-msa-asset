@@ -9,21 +9,68 @@ import (
 	"golang.org/x/image/bmp"
 	"golang.org/x/image/webp"
 	"image"
+	"image/color"
 	"image/gif"
 	"image/jpeg"
 	"image/png"
 	"io"
 	"log"
+	"math"
 	"net/http"
 	"omo.msa.asset/proxy"
 )
+
+type CircleMask struct {
+	image    image.Image
+	point    image.Point
+	diameter int //直径
+}
+
+func (ci CircleMask) ColorModel() color.Model {
+	return ci.image.ColorModel()
+}
+
+func (ci CircleMask) Bounds() image.Rectangle {
+	return image.Rect(0, 0, ci.diameter, ci.diameter)
+}
+
+func (ci CircleMask) At(x, y int) color.Color {
+	r := ci.diameter / 2
+	dis := math.Sqrt(math.Pow(float64(x-r), 2) + math.Pow(float64(y-r), 2))
+	if dis > float64(r) {
+		return ci.image.ColorModel().Convert(color.RGBA{R: 255, G: 255, B: 255})
+	} else {
+		return ci.image.At(ci.point.X+x, ci.point.Y+y)
+	}
+}
+
+//绘制内切园
+func drawInscribedCircle(src image.Image) ([]byte, error) {
+	w := src.Bounds().Max.X - src.Bounds().Min.X
+	h := src.Bounds().Max.Y - src.Bounds().Min.Y
+	d := w
+	if w > h {
+		d = h
+	}
+	dst := NewCircleMask(src, image.Point{X: d / 4, Y: d / 4}, d/2)
+	buf := bytes.NewBuffer(nil)
+	err := jpeg.Encode(buf, dst, &jpeg.Options{Quality: 100})
+	if err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
+}
+
+func NewCircleMask(img image.Image, pt image.Point, d int) CircleMask {
+	return CircleMask{img, pt, d}
+}
 
 func clipAssetFaces(uid, operator string) error {
 	asset := cacheCtx.GetAsset(uid)
 	if asset == nil {
 		return errors.New("not found the asset")
 	}
-	key, url := asset.getMinURL()
+	_, url := asset.getMinURL()
 	resp, er := detectFaces(url)
 	if er != nil {
 		return er
@@ -33,10 +80,11 @@ func clipAssetFaces(uid, operator string) error {
 	if asset.Scope == AssetScopeOrg {
 		group = asset.Owner
 	}
-	return clipFaces(asset.UID, key, asset.Owner, url, group, asset.Quote, operator, resp)
+	CheckFaceGroup(group)
+	return clipFaces(asset.UID, asset.Owner, url, group, asset.Quote, operator, resp)
 }
 
-func clipFaces(asset, key, owner, url, group, quote, operator string, info *DetectFaceResponse) error {
+func clipFaces(asset, owner, url, group, quote, operator string, info *DetectFaceResponse) error {
 	size, buf, err := downloadAsset(url)
 	if err != nil {
 		return err
@@ -48,22 +96,22 @@ func clipFaces(asset, key, owner, url, group, quote, operator string, info *Dete
 		return errors.New("not found the face of url = " + url)
 	}
 	for _, face := range info.Result.List {
-		bs64, er := clipImageFace(buf, face.Location)
+		bs64, bts, er := clipImageFace(buf, face.Location)
 		if er != nil {
 			return er
 		}
-		thumb, er1 := CreateThumb(asset, key, owner, bs64, quote, operator, face)
+		thumb, er1 := CreateThumb(asset, owner, bs64, quote, operator, bts, face)
 		if er1 != nil {
 			return er1
 		}
-		users, er := thumb.SearchUsers()
+		users, er := thumb.SearchUsers(group)
 		if er == nil {
 			if len(users) > 0 {
 				for _, user := range users {
-					thumb.RegisterFace(user.ID, user.Group)
+					_ = thumb.RegisterFace(user.ID, user.Group)
 				}
 			} else {
-				thumb.RegisterFace(thumb.User, group)
+				_ = thumb.RegisterFace(thumb.User, group)
 			}
 		}
 	}
@@ -84,13 +132,13 @@ func downloadAsset(url string) (int64, *bytes.Buffer, error) {
 	return l, buf, nil
 }
 
-func clipImageFace(buf *bytes.Buffer, loc proxy.LocationInfo) (string, error) {
+func clipImageFace(buf *bytes.Buffer, loc proxy.LocationInfo) (string, []byte, error) {
 	if buf == nil {
-		return "", errors.New("the buf is nil")
+		return "", nil, errors.New("the buf is nil")
 	}
 	origin, err := decodeImage(buf.Bytes(), int(loc.Width), int(loc.Height))
 	if err != nil {
-		return "", err
+		return "", nil, err
 	}
 	wid := int(loc.Width)
 	hei := int(loc.Height)
@@ -113,10 +161,11 @@ func clipImageFace(buf *bytes.Buffer, loc proxy.LocationInfo) (string, error) {
 	subBuf := bytes.NewBuffer(nil)
 	err = jpeg.Encode(subBuf, subImg, &jpeg.Options{100})
 	if err != nil {
-		return "", err
+		return "", nil, err
 	}
-	data := base64.StdEncoding.EncodeToString(subBuf.Bytes())
-	return data, nil
+	bts := subBuf.Bytes()
+	data := base64.StdEncoding.EncodeToString(bts)
+	return data, bts, nil
 }
 
 func decodeImage(bts []byte, wid, hei int) (image.Image, error) {

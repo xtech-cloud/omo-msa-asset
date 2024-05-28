@@ -42,6 +42,7 @@ func switchAsset(owner string, info *cache.AssetInfo) *pb.AssetInfo {
 	tmp.Quote = info.Quote
 	tmp.Status = uint32(info.Status)
 	tmp.Links = info.Links
+	tmp.Tags = info.Tags
 	tmp.Source = info.SourceURL()
 
 	thumbs, er := info.GetThumbs()
@@ -59,9 +60,9 @@ func switchThumbBrief(info *cache.ThumbInfo) *pb.ThumbBrief {
 	tmp := new(pb.ThumbBrief)
 	tmp.Uid = info.UID
 	tmp.Owner = info.Owner
-	tmp.Face = info.Face
+	tmp.Face = info.User
 	tmp.Blur = info.Blur
-	//tmp.Url = info.URL
+	tmp.Url = cache.GetURL(info.File, true)
 	tmp.Similar = info.Similar
 	tmp.Probably = info.Probably
 	return tmp

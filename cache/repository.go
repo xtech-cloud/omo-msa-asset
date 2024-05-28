@@ -11,6 +11,11 @@ import (
 )
 
 const (
+	ErrorCodeNotMatch  = 222207
+	ErrorCodeFaceExist = 223105
+)
+
+const (
 	QualityNone   = "NONE"
 	QualityLow    = "LOW"
 	QualityNormal = "NORMAL"
@@ -35,17 +40,17 @@ type FaceSearchReq struct {
 	Type      string `json:"image_type"`
 	Groups    string `json:"group_id_list"` //用户组列表，多个就用逗号分割
 	Quality   string `json:"quality_control"`
-	User      string `json:"user_id"`         //如果指定该字段，则是人脸认证
-	MaxUser   int    `json:"max_user_num"`    //返回的用户数量[1,50]，默认1
-	Threshold int    `json:"match_threshold"` //匹配阈值[0, 100]，默认80
+	User      string `json:"user_id,omitempty"` //如果指定该字段，则是人脸认证
+	MaxUser   int    `json:"max_user_num"`      //返回的用户数量[1,50]，默认1
+	Threshold int    `json:"match_threshold"`   //匹配阈值[0, 100]，默认80
 }
 
-type FaceSearchResponse struct {
+type FaceSearchResult struct {
 	Token string        `json:"face_token"`
 	Users []*UserResult `json:"user_list"`
 }
 
-type FaceMultiSearchResp struct {
+type FaceMultiSearchResult struct {
 	LogID    uint64            `json:"log_id"`
 	FaceNum  int               `json:"face_num"`
 	FaceList []*UserFaceResult `json:"face_list"`
@@ -89,7 +94,7 @@ type FaceAddReq struct {
 	Quality string `json:"quality_control"`
 }
 
-func searchFaceByOne(info *FaceSearchReq) (*FaceSearchResponse, error) {
+func searchFaceByOne(info *FaceSearchReq) (*FaceSearchResult, error) {
 	token, er := getDetectAccessToken()
 	if er != nil {
 		return nil, er
@@ -99,16 +104,27 @@ func searchFaceByOne(info *FaceSearchReq) (*FaceSearchResponse, error) {
 	if err != nil {
 		return nil, err
 	}
-	msg, er := httpPost(addr, string(data))
+	bts, er := httpPost(addr, string(data))
 	if er != nil {
 		return nil, er
 	}
-	reply := new(FaceSearchResponse)
-	er = json.Unmarshal(msg, reply)
+	result := gjson.ParseBytes(bts)
+	code := result.Get("error_code").Int()
+	reply := new(FaceSearchResult)
+	if code == ErrorCodeNotMatch {
+		reply.Token = ""
+		return reply, nil
+	}
+	if code != 0 {
+		return nil, errors.New(result.Get("error_msg").String())
+	}
+
+	re := result.Get("result").String()
+	er = json.Unmarshal([]byte(re), reply)
 	return reply, er
 }
 
-func searchFaceByMulti(info *FaceSearchReq) (*FaceMultiSearchResp, error) {
+func searchFaceByMulti(info *FaceSearchReq) (*FaceMultiSearchResult, error) {
 	token, er := getDetectAccessToken()
 	if er != nil {
 		return nil, er
@@ -118,12 +134,22 @@ func searchFaceByMulti(info *FaceSearchReq) (*FaceMultiSearchResp, error) {
 	if err != nil {
 		return nil, err
 	}
-	msg, er := httpPost(addr, string(data))
+	bts, er := httpPost(addr, string(data))
 	if er != nil {
 		return nil, er
 	}
-	reply := new(FaceMultiSearchResp)
-	er = json.Unmarshal(msg, reply)
+	result := gjson.ParseBytes(bts)
+	code := result.Get("error_code").Int()
+	reply := new(FaceMultiSearchResult)
+	if code == ErrorCodeNotMatch {
+		return reply, nil
+	}
+	if code != 0 {
+		return nil, errors.New(result.Get("error_msg").String())
+	}
+
+	re := result.Get("result").String()
+	er = json.Unmarshal([]byte(re), reply)
 	return reply, er
 }
 
@@ -228,7 +254,7 @@ func getFaceGroups() ([]string, error) {
 	if code != 0 {
 		return nil, errors.New(result.Get("error_msg").String())
 	}
-	arr := result.Get("result/group_id_list").Array()
+	arr := result.Get("result.group_id_list").Array()
 	list := make([]string, 0, len(arr))
 	for _, item := range arr {
 		list = append(list, item.String())
@@ -330,13 +356,13 @@ func removeFace(log uint64, face, user, group string) error {
 	return nil
 }
 
-func CheckFaceGroup() error {
+func CheckFaceGroup(group string) error {
 	list, er := getFaceGroups()
 	if er != nil {
 		return er
 	}
-	if tool.HasItem(list, FaceGroupDefault) {
+	if tool.HasItem(list, group) {
 		return nil
 	}
-	return createFaceGroup(FaceGroupDefault)
+	return createFaceGroup(group)
 }
