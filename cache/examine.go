@@ -74,26 +74,28 @@ func validateAsset(info *AssetInfo) {
 		logger.Warn("set asset code failed that uid = " + info.UID + " and msg = " + err.Error())
 		return
 	}
+	info.Code = code
 	if code == BD_Conclusion {
 		group := FaceGroupDefault
 		if info.Scope == AssetScopeOrg {
 			group = info.Owner
 		}
 		_ = CheckFaceGroup(group)
-		checkFaces(info.UID, info.Owner, url, group, info.Quote, info.Creator)
+		er = checkFaces(info.UID, info.Owner, url, group, info.Quote, info.Creator)
+		if er != nil {
+			logger.Warn("check faces failed that uid = " + info.UID + " and msg = " + er.Error())
+		}
 	}
 }
 
-func checkFaces(asset, owner, url, group, quote, operator string) {
+func checkFaces(asset, owner, url, group, quote, operator string) error {
 	resp, er := detectFaces(url)
 	if er != nil {
-		logger.Warn(er.Error())
-		return
+		return er
 	}
 	er = clipFaces(asset, owner, url, group, quote, operator, resp)
 	if er != nil {
-		logger.Warn(er.Error())
-		return
+		return er
 	}
-
+	return nil
 }

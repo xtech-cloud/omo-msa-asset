@@ -11,8 +11,10 @@ import (
 )
 
 const (
-	ErrorCodeNotMatch  = 222207
-	ErrorCodeFaceExist = 223105
+	ErrorCodeNotMatch   = 222207 //人脸用户不匹配
+	ErrorCodeFaceExist  = 223105 //人脸已经存在
+	ErrorCodeFaceNone   = 222202 //没有人脸
+	ErrorCodeFaceFailed = 222203 //人脸解析失败
 )
 
 const (
@@ -153,28 +155,28 @@ func searchFaceByMulti(info *FaceSearchReq) (*FaceMultiSearchResult, error) {
 	return reply, er
 }
 
-func registerUserFace(info *FaceAddReq) (*ImageFaceResult, error) {
+func registerUserFace(info *FaceAddReq) (*ImageFaceResult, int, error) {
 	token, er := getDetectAccessToken()
 	if er != nil {
-		return nil, er
+		return nil, -1, er
 	}
 	addr := fmt.Sprintf("%s?access_token=%s", config.Schema.Detection.Face.Add, token)
 	data, err := json.Marshal(info)
 	if err != nil {
-		return nil, err
+		return nil, -1, err
 	}
 	bts, er := httpPost(addr, string(data))
 	if er != nil {
-		return nil, er
+		return nil, -1, er
 	}
 	result := gjson.ParseBytes(bts)
 	code := result.Get("error_code").Int()
 	if code != 0 {
-		return nil, errors.New(result.Get("error_msg").String())
+		return nil, int(code), errors.New(result.Get("error_msg").String())
 	}
 	reply := new(ImageFaceResult)
 	er = json.Unmarshal(bts, reply)
-	return reply, er
+	return reply, 0, er
 }
 
 func updateUserFace(info *FaceAddReq) (*ImageFaceResult, error) {

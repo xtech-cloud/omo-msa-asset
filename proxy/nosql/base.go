@@ -62,7 +62,7 @@ func initMongoDB(ip string, port string, db string) error {
 
 func initMysql() error {
 	/*uri := core.DBConf.User + ":" + core.DBConf.Password + "@tcp(" + core.DBConf.URL+":"+core.DBConf.Port + ")/" + core.DBConf.Name
-	db, err := gorm.Open(core.DBConf.Type, uri)
+	db, err := gorm.Open(core.DBConf.Kind, uri)
 	if err != nil {
 		panic("failed to connect database!!!" + uri)
 		return err

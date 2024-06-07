@@ -190,12 +190,13 @@ func (mine *ThumbService) UpdateByFilter(ctx context.Context, in *pb.RequestUpda
 		out.Status = outError(path, "the uid is empty", pb.ResultStatus_Empty)
 		return nil
 	}
-	thumb := cache.Context().GetThumb(in.Uid)
+
 	var err error
 	if in.Field == "meta" {
+		thumb := cache.Context().GetThumb(in.Uid)
 		err = thumb.UpdateInfo(in.Value, in.Operator)
 	} else if in.Field == "bind" {
-		err = thumb.BindEntity(in.Value, in.Operator)
+		err = cache.Context().BindFaceEntity(in.Uid, in.Value, in.Operator)
 	}
 	if err != nil {
 		out.Status = outError(path, err.Error(), pb.ResultStatus_DBException)
@@ -210,7 +211,9 @@ func (mine *ThumbService) GetByFilter(ctx context.Context, in *pb.RequestFilter,
 	inLog(path, in)
 	var list []*cache.ThumbInfo
 	if in.Key == "quote_users" {
-		list = cache.Context().GetUserThumbsByQuote(in.Value)
+		list = cache.Context().GetUserThumbsByQuote(in.Value, in.Values)
+	} else if in.Key == "quote" {
+		list = cache.Context().GetThumbsByQuote(in.Value)
 	}
 	out.List = make([]*pb.ThumbInfo, 0, len(list))
 	for _, item := range list {

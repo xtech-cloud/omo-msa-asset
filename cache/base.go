@@ -49,7 +49,7 @@ func PublishSystemAssets() {
 func TestDetectFaces() {
 	//url := "https://rdpdown.suii.cn/000c0f54-3dd7-40c6-aa2b-f67378947978"
 	//url := "https://rdpdown.suii.cn/00278e27e030ac05"
-	asset := cacheCtx.GetAsset("66555038d811c89afc265da0")
+	asset := cacheCtx.GetAsset("6656d29f27eb71a742d7b5f2")
 	validateAsset(asset)
 }
 

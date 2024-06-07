@@ -36,7 +36,7 @@ type DetectFace struct {
 	Gender   *ProbabilityInfo   `json:"gender"`     //性别，male:男性 female:女性
 	Glasses  *ProbabilityInfo   `json:"glasses"`    //是否带眼镜，none:无眼镜，common:普通眼镜，sun:墨镜
 	Shape    *ProbabilityInfo   `json:"face_shape"` //情绪，angry:愤怒 disgust:厌恶 fear:恐惧 happy:高兴 sad:伤心 surprise:惊讶 neutral:无表情 pouty: 撅嘴 grimace:鬼脸
-	Type     *ProbabilityInfo   `json:"face_type"`  //真实人脸、卡通人脸；human: 真实人脸 cartoon: 卡通人脸
+	Kind     *ProbabilityInfo   `json:"face_type"`  //真实人脸、卡通人脸；human: 真实人脸 cartoon: 卡通人脸
 	Mask     *ProbabilityInfo   `json:"mask"`       //口罩识别，取值0或1； 0代表没戴口罩 1 代表戴口罩
 	Emotion  *ProbabilityInfo   `json:"emotion"`    //表情
 }
@@ -124,7 +124,7 @@ func detectFaces(img string) (*DetectFaceResponse, error) {
 		return nil, er
 	}
 	addr := fmt.Sprintf("%s?access_token=%s", config.Schema.Detection.Address, token)
-	data := fmt.Sprintf(`{"image":"%s","image_type":"URL","face_type":"LIVE", "max_face_num":50,"liveness_control":"NONE", "face_field":"age,gender,glasses,face_shape,quality"}`, img)
+	data := fmt.Sprintf(`{"image":"%s","image_type":"URL","face_type":"LIVE", "max_face_num":50,"liveness_control":"NONE", "face_field":"age,gender,glasses,face_shape,face_type,quality"}`, img)
 	bts, er := httpPost(addr, data)
 	if er != nil {
 		return nil, er
@@ -132,7 +132,7 @@ func detectFaces(img string) (*DetectFaceResponse, error) {
 	fmt.Println(string(bts))
 	reply := new(DetectFaceResponse)
 	er = json.Unmarshal(bts, reply)
-	if reply.Code > 0 {
+	if reply.Code > 0 && reply.Code != ErrorCodeFaceNone {
 		return nil, errors.New(reply.Message)
 	}
 	return reply, er

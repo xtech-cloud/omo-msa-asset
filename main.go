@@ -68,7 +68,7 @@ func main() {
 func delayRun() {
 	time.Sleep(5 * time.Second)
 	//cache.PublishSystemAssets()
-	cache.TestDetectFaces()
+	//cache.TestDetectFaces()
 }
 
 func md5hex(_file string) string {

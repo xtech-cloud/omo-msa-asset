@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"encoding/base64"
 	"errors"
+	"fmt"
 	"github.com/disintegration/imaging"
+	"github.com/micro/go-micro/v2/logger"
 	"github.com/nfnt/resize"
 	"golang.org/x/image/bmp"
 	"golang.org/x/image/webp"
@@ -85,17 +87,27 @@ func clipAssetFaces(uid, operator string) error {
 }
 
 func clipFaces(asset, owner, url, group, quote, operator string, info *DetectFaceResponse) error {
-	size, buf, err := downloadAsset(url)
+	if info.Result == nil || len(info.Result.List) < 1 {
+		return errors.New("not found the face of url = " + url)
+	}
+	logger.Warn(fmt.Sprintf("clip faces that count = %d of asset = %s", len(info.Result.List), asset))
+	faces := make([]*DetectFace, 0, len(info.Result.List))
+	for _, item := range info.Result.List {
+		if item.Kind.Type == "human" && item.Kind.Probability >= 0.5 {
+			faces = append(faces, item)
+		}
+	}
+	if len(faces) < 1 {
+		return errors.New("not found the human faces")
+	}
+	_, buf, err := downloadAsset(url)
 	if err != nil {
 		return err
 	}
-	if size < 100 {
-		return errors.New("the data is empty of url = " + url)
-	}
-	if info.Result == nil {
-		return errors.New("not found the face of url = " + url)
-	}
-	for _, face := range info.Result.List {
+	//if size < 100 {
+	//	return errors.New("the data is empty of url = " + url)
+	//}
+	for _, face := range faces {
 		bs64, bts, er := clipImageFace(buf, face.Location)
 		if er != nil {
 			return er

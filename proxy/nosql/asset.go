@@ -205,6 +205,16 @@ func UpdateAssetLinks(uid, operator string, arr []string) error {
 	return err
 }
 
+func UpdateAssetTags(uid, operator string, arr []string) error {
+	if len(uid) < 2 {
+		return errors.New("db asset uid is empty of UpdateAssetWeight")
+	}
+
+	msg := bson.M{"tags": arr, "operator": operator, TimeUpdated: time.Now().Unix()}
+	_, err := updateOne(TableAssets, uid, msg)
+	return err
+}
+
 func UpdateAssetType(uid, operator string, tp uint8) error {
 	if len(uid) < 2 {
 		return errors.New("db asset uid is empty of UpdateAssetType")

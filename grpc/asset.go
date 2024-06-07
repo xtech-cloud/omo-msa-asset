@@ -390,6 +390,8 @@ func (mine *AssetService) UpdateByFilter(ctx context.Context, in *pb.RequestUpda
 			err = info.UpdateOwner(in.Operator, in.Value)
 		} else if in.Field == "quote" {
 			err = info.UpdateQuote(in.Operator, in.Value)
+		} else if in.Field == "tags" {
+			err = info.UpdateTags(in.Operator, in.Values)
 		} else {
 			out.Status = outError(path, "not define the field", pb.ResultStatus_DBException)
 			return nil

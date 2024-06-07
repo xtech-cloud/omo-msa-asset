@@ -127,9 +127,9 @@ func GetThumbsByQuote(quote string) ([]*Thumb, error) {
 	return items, nil
 }
 
-func GetThumbsByUser(quote string) ([]*Thumb, error) {
+func GetThumbsByUser(user string) ([]*Thumb, error) {
 	var items = make([]*Thumb, 0, 20)
-	filter := bson.M{"user": quote, TimeDeleted: 0}
+	filter := bson.M{"user": user, TimeDeleted: 0}
 	cursor, err1 := findMany(TableThumbs, filter, 0)
 	if err1 != nil {
 		return nil, err1

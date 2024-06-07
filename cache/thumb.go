@@ -60,7 +60,7 @@ func CreateThumb(asset, owner, bs64, quote, operator string, bts []byte, info *D
 	return nil, err
 }
 
-func (mine *cacheContext) GetUserThumbsByQuote(quote string) []*ThumbInfo {
+func (mine *cacheContext) GetUserThumbsByQuote(quote string, assets []string) []*ThumbInfo {
 	dbs, err := nosql.GetThumbsByQuote(quote)
 	if err != nil {
 		return nil
@@ -68,15 +68,53 @@ func (mine *cacheContext) GetUserThumbsByQuote(quote string) []*ThumbInfo {
 	list := make([]*ThumbInfo, 0, len(dbs))
 	users := make([]string, 0, len(dbs))
 	for _, db := range dbs {
-		if !tool.HasItem(users, db.User) {
-			users = append(users, db.User)
-			info := new(ThumbInfo)
-			info.initInfo(db)
-			list = append(list, info)
+		if len(assets) > 0 {
+			if tool.HasItem(assets, db.Asset) && !tool.HasItem(users, db.User) {
+				users = append(users, db.User)
+				info := new(ThumbInfo)
+				info.initInfo(db)
+				list = append(list, info)
+			}
+		} else {
+			if !tool.HasItem(users, db.User) {
+				users = append(users, db.User)
+				info := new(ThumbInfo)
+				info.initInfo(db)
+				list = append(list, info)
+			}
 		}
 	}
 
 	return list
+}
+
+func (mine *cacheContext) GetThumbsByQuote(quote string) []*ThumbInfo {
+	dbs, err := nosql.GetThumbsByQuote(quote)
+	if err != nil {
+		return nil
+	}
+	list := make([]*ThumbInfo, 0, len(dbs))
+	for _, db := range dbs {
+		info := new(ThumbInfo)
+		info.initInfo(db)
+		list = append(list, info)
+	}
+	return list
+}
+
+func (mine *cacheContext) BindFaceEntity(user, entity, operator string) error {
+	dbs, err := nosql.GetThumbsByUser(user)
+	if err != nil {
+		return err
+	}
+	for _, db := range dbs {
+		er := nosql.UpdateThumbUser(db.UID.Hex(), entity, operator)
+		if er != nil {
+			return er
+		}
+	}
+
+	return nil
 }
 
 func (mine *ThumbInfo) initInfo(db *nosql.Thumb) {
@@ -158,8 +196,8 @@ func (mine *ThumbInfo) RegisterFace(user, group string) error {
 	req.User = id
 	req.Quality = QualityNone
 	req.Meta = fmt.Sprintf(`"user":"%s", "thumb":"%s"`, id, mine.UID)
-	_, err := registerUserFace(req)
-	if err != nil {
+	_, code, err := registerUserFace(req)
+	if err != nil && code != ErrorCodeFaceExist {
 		return err
 	}
 	if len(mine.User) < 2 {

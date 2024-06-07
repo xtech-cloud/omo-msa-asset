@@ -351,9 +351,6 @@ func (mine *AssetInfo) initInfo(db *nosql.Asset) {
 	mine.Links = db.Links
 	mine.Tags = db.Tags
 	mine.Code = db.Code
-	if mine.Code == 0 && mine.SupportFace() {
-		go validateAsset(mine)
-	}
 }
 
 func (mine *AssetInfo) GetThumbs() ([]*ThumbInfo, error) {
@@ -500,6 +497,15 @@ func (mine *AssetInfo) UpdateType(st uint8, operator string) error {
 	err := nosql.UpdateAssetType(mine.UID, operator, st)
 	if err == nil {
 		mine.Type = st
+		mine.Operator = operator
+	}
+	return err
+}
+
+func (mine *AssetInfo) UpdateTags(operator string, tags []string) error {
+	err := nosql.UpdateAssetTags(mine.UID, operator, tags)
+	if err == nil {
+		mine.Tags = tags
 		mine.Operator = operator
 	}
 	return err
