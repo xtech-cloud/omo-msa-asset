@@ -57,6 +57,12 @@ func RemoveThumb(uid, operator string) error {
 	return err
 }
 
+func RemoveThumbsByAsset(asset, operator string) error {
+	filter := bson.M{"asset": asset}
+	_, err := removeBy(TableThumbs, operator, filter)
+	return err
+}
+
 func GetThumb(uid string) (*Thumb, error) {
 	if len(uid) < 2 {
 		return nil, errors.New("db thumb uid is empty of GetThumb")

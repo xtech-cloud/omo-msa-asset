@@ -196,6 +196,24 @@ func removeOne(collection, uid, operator string) (int64, error) {
 	return result.ModifiedCount, nil
 }
 
+func removeBy(collection, operator string, filter bson.M) (int64, error) {
+	if len(collection) < 1 {
+		return 0, errors.New("the collection is empty")
+	}
+	c := noSql.Collection(collection)
+	if c == nil {
+		return 0, errors.New("can not found the collection of" + collection)
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), timeOut)
+	defer cancel()
+	node := bson.M{"$set": bson.M{"operator": operator, TimeDeleted: time.Now().Unix()}}
+	result, err := c.UpdateOne(ctx, filter, node)
+	if err != nil {
+		return 0, err
+	}
+	return result.ModifiedCount, nil
+}
+
 func hadOne(collection string, filter bson.M) (bool, error) {
 	if len(collection) < 1 {
 		return false, errors.New("the collection is empty")

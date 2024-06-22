@@ -93,7 +93,7 @@ func clipFaces(asset, owner, url, group, quote, operator string, info *DetectFac
 	logger.Warn(fmt.Sprintf("clip faces that count = %d of asset = %s", len(info.Result.List), asset))
 	faces := make([]*DetectFace, 0, len(info.Result.List))
 	for _, item := range info.Result.List {
-		if item.Kind.Type == "human" && item.Kind.Probability >= 0.5 {
+		if item.Kind.Type == "human" && item.Kind.Probability >= 0.8 {
 			faces = append(faces, item)
 		}
 	}
@@ -161,15 +161,24 @@ func clipImageFace(buf *bytes.Buffer, loc proxy.LocationInfo) (string, []byte, e
 	//img := origin.(*image.YCbCr)
 	//subImg := img.SubImage(image.Rect(int(loc.Left), int(loc.Top), wid, hei))
 	//subImg := img.SubImage(image.Rect(100, 300, wid, hei))
-	left := int(loc.Left) - 20
+	min := wid
+	if min > hei {
+		min = hei
+	}
+	off := min / 2
+	//if wid > 90 || hei > 90 {
+	//	off = 60
+	//}
+	left := int(loc.Left) - off
 	if left < 1 {
 		left = 1
 	}
-	top := int(loc.Top) - 60
+	top := int(loc.Top) - off/2 - off
 	if top < 1 {
 		top = 1
 	}
-	subImg := imaging.Crop(origin, image.Rect(left, top, left+wid+50, top+hei+50))
+
+	subImg := imaging.Crop(origin, image.Rect(left, top, left+wid+off*2, top+hei+off*2))
 	subBuf := bytes.NewBuffer(nil)
 	err = jpeg.Encode(subBuf, subImg, &jpeg.Options{100})
 	if err != nil {

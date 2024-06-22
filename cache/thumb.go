@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"omo.msa.asset/proxy"
 	"omo.msa.asset/proxy/nosql"
 	"omo.msa.asset/tool"
 	"time"
@@ -20,13 +21,14 @@ type ThumbInfo struct {
 	Creator  string
 	Operator string
 
-	Face  string
-	File  string
-	Owner string
-	Asset string
-	Meta  string
-	User  string
-	Quote string
+	Face     string
+	File     string
+	Owner    string
+	Asset    string
+	Meta     string
+	User     string
+	Quote    string
+	Location proxy.LocationInfo
 }
 
 func CreateThumb(asset, owner, bs64, quote, operator string, bts []byte, info *DetectFace) (*ThumbInfo, error) {
@@ -133,6 +135,7 @@ func (mine *ThumbInfo) initInfo(db *nosql.Thumb) {
 	mine.User = db.User
 	mine.Quote = db.Quote
 	mine.File = db.File
+	mine.Location = db.Location
 }
 
 func (mine *ThumbInfo) UpdateBase(owner string, similar float32) error {

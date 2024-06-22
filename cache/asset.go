@@ -374,6 +374,7 @@ func (mine *AssetInfo) Remove(operator string) error {
 	err := mine.ToRecycle(operator)
 	if err == nil {
 		_ = nosql.RemoveAsset(mine.UID)
+		_ = nosql.RemoveThumbsByAsset(mine.UID, operator)
 	}
 	return err
 }
