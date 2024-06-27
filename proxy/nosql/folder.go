@@ -161,3 +161,13 @@ func UpdateFolderCover(uid, cover, operator string) error {
 	_, err := updateOne(TableFolders, uid, msg)
 	return err
 }
+
+func AppendFolderContent(uid, operator string, cont *proxy.PairInfo) error {
+	if len(uid) < 2 {
+		return errors.New("db folder uid is empty")
+	}
+
+	msg := bson.M{"contents": cont}
+	_, err := appendElement(TableFolders, uid, msg)
+	return err
+}

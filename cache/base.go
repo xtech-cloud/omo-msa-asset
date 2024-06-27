@@ -17,13 +17,9 @@ import (
 
 const DefaultScene = "system"
 
-type cacheContext struct {
-}
-
-var cacheCtx *cacheContext
-
 func InitData() error {
 	cacheCtx = &cacheContext{}
+	cacheCtx.initPool()
 
 	err := nosql.InitDB(config.Schema.Database.IP, config.Schema.Database.Port, config.Schema.Database.Name, config.Schema.Database.Type)
 	if err == nil {
@@ -32,7 +28,7 @@ func InitData() error {
 		logger.Infof("the asset count = %d and the thumb count = %d", num, count)
 		//nosql.CheckTimes()
 	}
-	go CheckFaceGroup(FaceGroupDefault)
+	go checkFaceGroup(FaceGroupDefault)
 	return err
 }
 
@@ -47,29 +43,6 @@ func PublishSystemAssets() {
 			_ = nosql.UpdateAssetStatus(db.UID.Hex(), db.Operator, StatusPublish)
 		}
 	}
-}
-
-func TestDetectFaces() {
-	//url := "https://rdpdown.suii.cn/000c0f54-3dd7-40c6-aa2b-f67378947978"
-	//url := "https://rdpdown.suii.cn/00278e27e030ac05"
-	//arr := []string{"66583b54389327dc6d98ca0d", "6656d86944c2db2fb4312c14", "66583b52389327dc6d98ca09"}
-	//for _, uid := range arr {
-	//	thumb := cacheCtx.GetThumb(uid)
-	//	asset := cacheCtx.GetAsset(thumb.Asset)
-	//	_, url := asset.getMinURL()
-	//	_, buf, err := downloadAsset(url)
-	//	if err == nil {
-	//		saveImage(buf.Bytes(), fmt.Sprintf("files/img/asset-%s.jpg", uid))
-	//		_, bts, er := clipImageFace(buf, thumb.Location)
-	//		if er == nil {
-	//			saveImage(bts, fmt.Sprintf("files/img/thumb-%s.jpg", uid))
-	//		}
-	//	}
-	//}
-	//
-	//fmt.Println("test complete!!!!1")
-	asset := cacheCtx.GetAsset("666fb247d8619fe8e05f32a5")
-	validateAsset(asset)
 }
 
 func saveImage(bts []byte, path string) error {

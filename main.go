@@ -67,6 +67,7 @@ func main() {
 
 func delayRun() {
 	time.Sleep(5 * time.Second)
+	//cache.Context().CheckThumbs()
 	//cache.PublishSystemAssets()
 	//cache.TestDetectFaces()
 }

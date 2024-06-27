@@ -14,6 +14,8 @@ const (
 	BD_NonConclusion int = 102 //不合规
 	BD_Uncertain     int = 103 //疑似
 	BD_Failed        int = 104 //失败
+	BD_Detection     int = 199 //人脸识别完成
+	BD_DetectFailed  int = 198 //人脸识别失败
 )
 
 type ExamineResult struct {
@@ -76,26 +78,20 @@ func validateAsset(info *AssetInfo) {
 	}
 	info.Code = code
 	if code == BD_Conclusion {
-		group := FaceGroupDefault
-		if info.Scope == AssetScopeOrg {
-			group = info.Owner
-		}
-		_ = CheckFaceGroup(group)
-		er = checkFaces(info.UID, info.Owner, url, group, info.Quote, info.Creator)
-		if er != nil {
-			logger.Warn("check faces failed that uid = " + info.UID + " and msg = " + er.Error())
-		}
+		cacheCtx.addPendingAsset(info)
 	}
 }
 
-func checkFaces(asset, owner, url, group, quote, operator string) error {
-	resp, er := detectFaces(url)
+func checkFaces(asset, owner, url, group, quote, operator string) (error, int) {
+	resp, er, code := detectFaces(url)
 	if er != nil {
-		return er
+		_ = nosql.UpdateAssetCode(asset, BD_DetectFailed)
+		return er, code
 	}
+	_ = nosql.UpdateAssetCode(asset, BD_Detection)
 	er = clipFaces(asset, owner, url, group, quote, operator, resp)
 	if er != nil {
-		return er
+		return er, -1
 	}
-	return nil
+	return nil, 0
 }

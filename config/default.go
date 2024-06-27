@@ -9,7 +9,7 @@ const defaultJson string = `{
 	"logger": {
 		"level": "info",
 		"file": "logs/server.log",
-		"std": false
+		"std": true
 	},
 	"database": {
 		"name": "rgsCloud",

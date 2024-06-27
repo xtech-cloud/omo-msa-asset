@@ -11,10 +11,14 @@ import (
 )
 
 const (
-	ErrorCodeNotMatch   = 222207 //人脸用户不匹配
-	ErrorCodeFaceExist  = 223105 //人脸已经存在
-	ErrorCodeFaceNone   = 222202 //没有人脸
-	ErrorCodeFaceFailed = 222203 //人脸解析失败
+	ErrorCodeQPSLimit       = 18
+	ErrorCodeNotMatch       = 222207 //未找到匹配的用户
+	ErrorCodeFaceExist      = 223105 //人脸已经存在
+	ErrorCodeFaceNone       = 222202 //图片中没有人脸
+	ErrorCodeFaceFailed     = 222203 //人脸解析失败
+	ErrorCodeDownloadFailed = 222204 //从图片的url下载图片失败
+	ErrorCodeTooLarge       = 222304 //图片尺寸过大，要小于4k
+	ErrorCodeFaceLimit      = 222210 //人脸库中用户下的人脸数目超过限制<=20
 )
 
 const (
@@ -96,34 +100,30 @@ type FaceAddReq struct {
 	Quality string `json:"quality_control"`
 }
 
-func searchFaceByOne(info *FaceSearchReq) (*FaceSearchResult, error) {
+func searchFaceByOne(info *FaceSearchReq) (*FaceSearchResult, error, int) {
 	token, er := getDetectAccessToken()
 	if er != nil {
-		return nil, er
+		return nil, er, -1
 	}
 	addr := fmt.Sprintf("%s?access_token=%s", config.Schema.Detection.OneSearch, token)
 	data, err := json.Marshal(info)
 	if err != nil {
-		return nil, err
+		return nil, err, -1
 	}
-	bts, er := httpPost(addr, string(data))
-	if er != nil {
-		return nil, er
+	bts, er1 := httpPost(addr, string(data))
+	if er1 != nil {
+		return nil, er1, -1
 	}
 	result := gjson.ParseBytes(bts)
 	code := result.Get("error_code").Int()
 	reply := new(FaceSearchResult)
-	if code == ErrorCodeNotMatch {
-		reply.Token = ""
-		return reply, nil
-	}
 	if code != 0 {
-		return nil, errors.New(result.Get("error_msg").String())
+		return nil, errors.New(result.Get("error_msg").String()), int(code)
 	}
 
 	re := result.Get("result").String()
 	er = json.Unmarshal([]byte(re), reply)
-	return reply, er
+	return reply, er, 0
 }
 
 func searchFaceByMulti(info *FaceSearchReq) (*FaceMultiSearchResult, error) {
@@ -171,6 +171,9 @@ func registerUserFace(info *FaceAddReq) (*ImageFaceResult, int, error) {
 	}
 	result := gjson.ParseBytes(bts)
 	code := result.Get("error_code").Int()
+	if code == ErrorCodeQPSLimit {
+		return nil, int(code), errors.New("the qps limit by search")
+	}
 	if code != 0 {
 		return nil, int(code), errors.New(result.Get("error_msg").String())
 	}
@@ -358,7 +361,7 @@ func removeFace(log uint64, face, user, group string) error {
 	return nil
 }
 
-func CheckFaceGroup(group string) error {
+func checkFaceGroup(group string) error {
 	list, er := getFaceGroups()
 	if er != nil {
 		return er

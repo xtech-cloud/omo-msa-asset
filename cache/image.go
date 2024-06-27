@@ -73,7 +73,7 @@ func clipAssetFaces(uid, operator string) error {
 		return errors.New("not found the asset")
 	}
 	_, url := asset.getMinURL()
-	resp, er := detectFaces(url)
+	resp, er, _ := detectFaces(url)
 	if er != nil {
 		return er
 	}
@@ -82,7 +82,7 @@ func clipAssetFaces(uid, operator string) error {
 	if asset.Scope == AssetScopeOrg {
 		group = asset.Owner
 	}
-	CheckFaceGroup(group)
+	checkFaceGroup(group)
 	return clipFaces(asset.UID, asset.Owner, url, group, asset.Quote, operator, resp)
 }
 
@@ -112,20 +112,19 @@ func clipFaces(asset, owner, url, group, quote, operator string, info *DetectFac
 		if er != nil {
 			return er
 		}
-		thumb, er1 := CreateThumb(asset, owner, bs64, quote, operator, bts, face)
-		if er1 != nil {
-			return er1
-		}
-		users, er := thumb.SearchUsers(group)
-		if er == nil {
-			if len(users) > 0 {
-				for _, user := range users {
-					_ = thumb.RegisterFace(user.ID, user.Group)
-				}
-			} else {
-				_ = thumb.RegisterFace(thumb.User, group)
-			}
-		}
+		thumb := CreateThumb(asset, owner, bs64, quote, group, operator, bts, face)
+		cacheCtx.addPendingThumb(thumb, true)
+		//users, er := thumb.SearchUsers()
+		//if er == nil {
+		//	if len(users) > 0 {
+		//		_ = thumb.RegisterFace(users[0].ID, users[0].Group)
+		//	} else {
+		//		_ = thumb.RegisterFace(thumb.User, group)
+		//	}
+		//	thumb.save()
+		//} else {
+		//	logger.Error(fmt.Sprintf("search user face (%s) from group of %s, that err = %s", thumb.UID, group, er.Error()))
+		//}
 	}
 	return nil
 }

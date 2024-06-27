@@ -118,24 +118,24 @@ func httpPost(address, data string) ([]byte, error) {
 }
 
 //检测图片中的人脸
-func detectFaces(img string) (*DetectFaceResponse, error) {
+func detectFaces(img string) (*DetectFaceResponse, error, int) {
 	token, er := getDetectAccessToken()
 	if er != nil {
-		return nil, er
+		return nil, er, 0
 	}
 	addr := fmt.Sprintf("%s?access_token=%s", config.Schema.Detection.Address, token)
 	data := fmt.Sprintf(`{"image":"%s","image_type":"URL","face_type":"LIVE", "max_face_num":50,"liveness_control":"NONE", "face_field":"age,gender,glasses,face_shape,face_type,quality"}`, img)
 	bts, er := httpPost(addr, data)
 	if er != nil {
-		return nil, er
+		return nil, er, 0
 	}
-	fmt.Println(string(bts))
+	//fmt.Println(string(bts))
 	reply := new(DetectFaceResponse)
 	er = json.Unmarshal(bts, reply)
-	if reply.Code > 0 && reply.Code != ErrorCodeFaceNone {
-		return nil, errors.New(reply.Message)
+	if reply.Code > 0 {
+		return nil, errors.New(reply.Message), int(reply.Code)
 	}
-	return reply, er
+	return reply, er, 0
 }
 
 //对比人脸

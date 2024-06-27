@@ -31,6 +31,8 @@ type Thumb struct {
 	Meta     string             `json:"meta" bson:"meta"`
 	User     string             `json:"user" bson:"user"`
 	Quote    string             `json:"quote" bson:"quote"`
+	Group    string             `json:"group" bson:"group"`
+	Status   uint32             `json:"status" bson:"status"`
 	Location proxy.LocationInfo `json:"location" bson:"location"`
 }
 
@@ -78,6 +80,16 @@ func GetThumb(uid string) (*Thumb, error) {
 		return nil, err1
 	}
 	return model, nil
+}
+
+func GetThumbCountByAsset(asset string) uint32 {
+	filter := bson.M{"asset": asset, TimeDeleted: 0}
+	num, err1 := getCountBy(TableThumbs, filter)
+	if err1 != nil {
+		return 0
+	}
+
+	return uint32(num)
 }
 
 func GetThumbByFace(asset, face string) (*Thumb, error) {
@@ -151,6 +163,24 @@ func GetThumbsByUser(user string) ([]*Thumb, error) {
 	return items, nil
 }
 
+func GetThumbsByStatus(st uint32) ([]*Thumb, error) {
+	var items = make([]*Thumb, 0, 20)
+	filter := bson.M{"status": st, TimeDeleted: 0}
+	cursor, err1 := findMany(TableThumbs, filter, 0)
+	if err1 != nil {
+		return nil, err1
+	}
+	for cursor.Next(context.Background()) {
+		var node = new(Thumb)
+		if err := cursor.Decode(&node); err != nil {
+			return nil, err
+		} else {
+			items = append(items, node)
+		}
+	}
+	return items, nil
+}
+
 func GetThumbsByAsset(asset string) ([]*Thumb, error) {
 	var items = make([]*Thumb, 0, 20)
 	filter := bson.M{"asset": asset, TimeDeleted: 0}
@@ -195,6 +225,26 @@ func UpdateThumbUser(uid, user, operator string) error {
 	}
 
 	msg := bson.M{"user": user, "operator": operator, TimeUpdated: time.Now().Unix()}
+	_, err := updateOne(TableThumbs, uid, msg)
+	return err
+}
+
+func UpdateThumbGroup(uid, group string) error {
+	if len(uid) < 2 {
+		return errors.New("db thumb uid is empty of GetAsset")
+	}
+
+	msg := bson.M{"group": group}
+	_, err := updateOne(TableThumbs, uid, msg)
+	return err
+}
+
+func UpdateThumbStatus(uid string, st uint32) error {
+	if len(uid) < 2 {
+		return errors.New("db thumb uid is empty of GetAsset")
+	}
+
+	msg := bson.M{"status": st}
 	_, err := updateOne(TableThumbs, uid, msg)
 	return err
 }

@@ -146,6 +146,9 @@ func (mine *FolderInfo) initInfo(db *nosql.Folder) {
 	mine.Tags = db.Tags
 	mine.Users = db.Users
 	mine.Contents = db.Contents
+	if mine.Contents == nil {
+		mine.Contents = make([]*proxy.PairInfo, 0, 1)
+	}
 }
 
 func (mine *FolderInfo) GetChildCount() uint32 {
@@ -213,15 +216,21 @@ func (mine *FolderInfo) AppendContent(key, value, operator string) error {
 	if mine.HadContent(key) {
 		return nil
 	}
-	all := make([]*proxy.PairInfo, 0, len(mine.Contents)+1)
-	all = append(all, &proxy.PairInfo{
+	//all := make([]*proxy.PairInfo, 0, len(mine.Contents)+1)
+	//all = append(all, mine.Contents...)
+	//all = append(all, &proxy.PairInfo{
+	//	Key:   key,
+	//	Value: value,
+	//	Count: 0,
+	//})
+	tmp := &proxy.PairInfo{
 		Key:   key,
 		Value: value,
 		Count: 0,
-	})
-	err := nosql.UpdateFolderContents(mine.UID, operator, all)
+	}
+	err := nosql.AppendFolderContent(mine.UID, operator, tmp)
 	if err == nil {
-		mine.Contents = all
+		mine.Contents = append(mine.Contents, tmp)
 		mine.Operator = operator
 	}
 	return err

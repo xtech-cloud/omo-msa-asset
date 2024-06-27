@@ -133,6 +133,9 @@ func (mine *cacheContext) GetAsset(uid string) *AssetInfo {
 }
 
 func (mine *cacheContext) GetAssetByKey(key string) *AssetInfo {
+	if key == "" {
+		return nil
+	}
 	db, err := nosql.GetAssetByKey(key)
 	if err == nil {
 		info := new(AssetInfo)
@@ -351,6 +354,19 @@ func (mine *AssetInfo) initInfo(db *nosql.Asset) {
 	mine.Links = db.Links
 	mine.Tags = db.Tags
 	mine.Code = db.Code
+
+	if mine.Code == BD_Conclusion {
+		if mine.GetThumbCount() > 0 {
+			_ = nosql.UpdateAssetCode(mine.UID, BD_Detection)
+			mine.Code = BD_Detection
+		} else {
+			cacheCtx.addPendingAsset(mine)
+		}
+	}
+}
+
+func (mine *AssetInfo) GetThumbCount() uint32 {
+	return nosql.GetThumbCountByAsset(mine.UID)
 }
 
 func (mine *AssetInfo) GetThumbs() ([]*ThumbInfo, error) {
@@ -365,6 +381,14 @@ func (mine *AssetInfo) GetThumbs() ([]*ThumbInfo, error) {
 		list = append(list, tmp)
 	}
 	return list, nil
+}
+
+func (mine *AssetInfo) CheckFaceGroup() string {
+	group := FaceGroupDefault
+	if mine.Scope == AssetScopeOrg {
+		group = mine.Owner
+	}
+	return group
 }
 
 func (mine *AssetInfo) Remove(operator string) error {
