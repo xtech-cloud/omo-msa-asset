@@ -355,14 +355,14 @@ func (mine *AssetInfo) initInfo(db *nosql.Asset) {
 	mine.Tags = db.Tags
 	mine.Code = db.Code
 
-	if mine.Code == BD_Conclusion {
-		if mine.GetThumbCount() > 0 {
-			_ = nosql.UpdateAssetCode(mine.UID, BD_Detection)
-			mine.Code = BD_Detection
-		} else {
-			cacheCtx.addPendingAsset(mine)
-		}
-	}
+	//if mine.Code == BD_Conclusion {
+	//	if mine.GetThumbCount() > 0 {
+	//		_ = nosql.UpdateAssetCode(mine.UID, BD_Detection)
+	//		mine.Code = BD_Detection
+	//	} else {
+	//		cacheCtx.addPendingAsset(mine)
+	//	}
+	//}
 }
 
 func (mine *AssetInfo) GetThumbCount() uint32 {
