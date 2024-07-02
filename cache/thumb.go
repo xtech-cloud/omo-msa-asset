@@ -23,39 +23,42 @@ type ThumbInfo struct {
 	Creator  string
 	Operator string
 
-	Face     string
-	File     string
-	Owner    string
-	Asset    string
-	Meta     string
+	Face  string
+	File  string
+	Owner string
+	Asset string
+	Meta  string
+
 	User     string
 	Quote    string
 	Group    string
+	bs64     string
 	data     []byte
 	Location proxy.LocationInfo
 }
 
 func CreateThumb(asset, owner, bs64, quote, group, operator string, bts []byte, info *DetectFace) *ThumbInfo {
-	db := new(ThumbInfo)
-	db.UID = primitive.NewObjectID().Hex()
-	db.ID = nosql.GetThumbNextID()
-	db.Created = time.Now().Unix()
-	db.data = bts
-	db.Creator = operator
-	db.Operator = operator
-	db.User = ""
-	db.Quote = quote
-	db.File = ""
-	db.Asset = asset
-	db.Blur = info.Quality.Blur
-	db.Owner = owner
-	db.Probably = info.Probability
-	db.Similar = 0
-	db.Group = group
-	db.Location = info.Location
-	db.Meta = bs64
-	db.Status = 0
-	return db
+	temp := new(ThumbInfo)
+	temp.UID = primitive.NewObjectID().Hex()
+	temp.ID = nosql.GetThumbNextID()
+	temp.Created = time.Now().Unix()
+	temp.data = bts
+	temp.Creator = operator
+	temp.Operator = operator
+	temp.User = ""
+	temp.Quote = quote
+	temp.File = ""
+	temp.Asset = asset
+	temp.Blur = info.Quality.Blur
+	temp.Owner = owner
+	temp.Probably = info.Probability
+	temp.Similar = 0
+	temp.Group = group
+	temp.Meta = ""
+	temp.Location = info.Location
+	temp.bs64 = bs64
+	temp.Status = 0
+	return temp
 }
 
 func (mine *cacheContext) GetUserThumbsByQuote(quote string, assets []string) []*ThumbInfo {
@@ -185,7 +188,7 @@ func (mine *ThumbInfo) UpdateBase(owner string, similar float32) error {
 func (mine *ThumbInfo) SearchUsers() ([]*UserResult, error) {
 	req := new(FaceSearchReq)
 	req.Type = ImageTypeBase64
-	req.Image = mine.Meta
+	req.Image = mine.bs64
 	req.Groups = mine.Group
 	req.Quality = QualityNone
 	req.MaxUser = 10
@@ -210,7 +213,7 @@ func (mine *ThumbInfo) SearchUsers() ([]*UserResult, error) {
 func (mine *ThumbInfo) Identification(user, group string) (*UserResult, error) {
 	req := new(FaceSearchReq)
 	req.Type = ImageTypeBase64
-	req.Image = mine.Meta
+	req.Image = mine.bs64
 	req.Groups = group
 	req.Quality = QualityNone
 	req.MaxUser = 1
@@ -241,7 +244,7 @@ func (mine *ThumbInfo) RegisterFace(user, group string) error {
 	}
 	req := new(FaceAddReq)
 	req.Type = ImageTypeBase64
-	req.Image = mine.Meta
+	req.Image = mine.bs64
 	req.Group = group
 	req.User = id
 	req.Quality = QualityNone
@@ -260,7 +263,7 @@ func (mine *ThumbInfo) RegisterFace(user, group string) error {
 func (mine *ThumbInfo) UpdateInfo(meta, operator string) error {
 	err := nosql.UpdateThumbMeta(mine.UID, meta, operator)
 	if err == nil {
-		mine.Meta = meta
+		mine.bs64 = meta
 		mine.Operator = operator
 	}
 	return err
