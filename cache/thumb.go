@@ -8,6 +8,7 @@ import (
 	"omo.msa.asset/proxy"
 	"omo.msa.asset/proxy/nosql"
 	"omo.msa.asset/tool"
+	"strings"
 	"time"
 )
 
@@ -105,6 +106,9 @@ func (mine *cacheContext) GetThumbsByQuote(quote string) []*ThumbInfo {
 }
 
 func (mine *cacheContext) BindFaceEntity(user, entity, operator string) error {
+	if len(entity) < 2 {
+		return errors.New("the entity is empty")
+	}
 	dbs, err := nosql.GetThumbsByUser(user)
 	if err != nil {
 		return err
@@ -114,6 +118,7 @@ func (mine *cacheContext) BindFaceEntity(user, entity, operator string) error {
 		if er != nil {
 			return er
 		}
+		_ = nosql.UpdateAssetOwner(db.Asset, entity, operator)
 	}
 
 	return nil
@@ -170,6 +175,9 @@ func (mine *ThumbInfo) save() error {
 	er := nosql.CreateThumb(db)
 	if er == nil {
 		go uploadToQiNiu(file, mine.data)
+		if !strings.Contains(mine.User, "temp_") {
+			_ = nosql.UpdateAssetOwner(mine.Asset, mine.User, mine.Operator)
+		}
 	}
 	logger.Warn("try save thumb of asset = " + db.Asset + " and thumb = " + mine.UID + "; user = " + db.User)
 	return er
