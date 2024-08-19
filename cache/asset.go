@@ -6,6 +6,7 @@ import (
 	"github.com/qiniu/api.v7/v7/storage"
 	pb "github.com/xtech-cloud/omo-msp-asset/proto/asset"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"math"
 	"omo.msa.asset/config"
 	"omo.msa.asset/proxy/nosql"
 	"strings"
@@ -34,8 +35,8 @@ const UP_QINIU = "qiniu"
 
 const (
 	StatusPrivate uint8 = 0
-	StatusPending uint8 = 1
-	StatusPublish uint8 = 2
+	StatusPending uint8 = 1 //待审
+	StatusPublish uint8 = 2 //审核通过
 )
 
 type AssetInfo struct {
@@ -48,7 +49,7 @@ type AssetInfo struct {
 	Size     uint64
 	Created  int64
 	Updated  int64
-	Code     int    //状态码
+	Code     int    //内部状态码
 	ID       uint64 `json:"-"`
 	UID      string `json:"uid"`
 	Name     string `json:"name"`
@@ -63,14 +64,14 @@ type AssetInfo struct {
 	Format   string
 	MD5      string
 	Language string
-	Quote    string //引用的实体
+	Quote    string //引用的对象
 
 	// 快照，中图
 	Snapshot string
 	// 封面小图
 	Small string
 
-	Links []string
+	Links []string //关联的实体
 	Tags  []string
 }
 
@@ -177,29 +178,41 @@ func (mine *cacheContext) GetAssetCount(quote string) uint32 {
 	return uint32(nosql.GetAssetsCountByQuote(quote))
 }
 
+func (mine *cacheContext) GetAssetCountByOwnerCreator(quote, creator string) uint32 {
+	return uint32(nosql.GetAssetsCountByOwnerCreator(quote, creator))
+}
+
+func (mine *cacheContext) GetAssetCountByQuoteCreator(quote, creator string) uint32 {
+	return uint32(nosql.GetAssetsCountByQuoteCreator(quote, creator))
+}
+
 func (mine *cacheContext) GetAssetsByQuote(owner, quote string, page, num uint32) (uint32, uint32, []*AssetInfo) {
 	if quote == "" {
 		return 0, 0, make([]*AssetInfo, 0, 1)
 	}
 	var dbs []*nosql.Asset
 	var err error
+	start, number := getPageStart(page, num)
+	var total int64 = 0
 	if len(owner) > 1 {
-		dbs, err = nosql.GetAssetsByOwnerQuote(owner, quote)
+		dbs, err = nosql.GetAssetsByOwnerQuote(owner, quote, int64(start), int64(number))
+		total = nosql.GetAssetsCountByOwnerQuote(owner, quote)
 	} else {
-		dbs, err = nosql.GetAssetsByQuote(quote)
+		dbs, err = nosql.GetAssetsByQuote(quote, int64(start), int64(number))
+		total = nosql.GetAssetsCountByQuote(quote)
 	}
 
+	pages := math.Ceil(float64(total) / float64(number))
 	if err != nil {
 		return 0, 0, make([]*AssetInfo, 0, 1)
 	}
-	total, pages, arr := checkPage(page, num, dbs)
 	list := make([]*AssetInfo, 0, num)
-	for _, asset := range arr {
+	for _, asset := range dbs {
 		info := new(AssetInfo)
 		info.initInfo(asset)
 		list = append(list, info)
 	}
-	return total, pages, list
+	return uint32(total), uint32(pages), list
 }
 
 func (mine *cacheContext) GetAssetsByOwnerType(owner string, tp int) []*AssetInfo {
@@ -214,6 +227,41 @@ func (mine *cacheContext) GetAssetsByOwnerType(owner string, tp int) []*AssetInf
 		list = append(list, info)
 	}
 	return list
+}
+
+func (mine *cacheContext) GetAssetsByQuoteStatus(quote string, st, page, num uint32) (uint32, uint32, []*AssetInfo) {
+	start, number := getPageStart(page, num)
+	total := nosql.GetAssetsCountByQuoteStatus(quote, st)
+	array, err := nosql.GetAssetsByQuoteStatus(quote, uint8(st), int64(start), int64(number))
+	pages := math.Ceil(float64(total) / float64(number))
+	if err != nil {
+		return 0, 0, make([]*AssetInfo, 0, 1)
+	}
+	list := make([]*AssetInfo, 0, len(array))
+	for _, asset := range array {
+		info := new(AssetInfo)
+		info.initInfo(asset)
+		list = append(list, info)
+	}
+	return uint32(total), uint32(pages), list
+}
+
+func (mine *cacheContext) GetAssetsByQuoteCreator(quote, creator string, page, num uint32) (uint32, uint32, []*AssetInfo) {
+	start, number := getPageStart(page, num)
+	total := nosql.GetAssetsCountByQuoteCreator(quote, creator)
+	pages := math.Ceil(float64(total) / float64(number))
+	array, err := nosql.GetAssetsByQuoteCreator(quote, creator, int64(start), int64(number))
+
+	if err != nil {
+		return 0, 0, make([]*AssetInfo, 0, 1)
+	}
+	list := make([]*AssetInfo, 0, len(array))
+	for _, asset := range array {
+		info := new(AssetInfo)
+		info.initInfo(asset)
+		list = append(list, info)
+	}
+	return uint32(total), uint32(pages), list
 }
 
 func (mine *cacheContext) GetAssetsByType(tp int) []*AssetInfo {

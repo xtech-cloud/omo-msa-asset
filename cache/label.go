@@ -99,7 +99,7 @@ func (mine *cacheContext) GetLabelsByQuote(uid string) ([]*LabelInfo, error) {
 	if err != nil {
 		return nil, err
 	}
-	assets, er := nosql.GetAssetsByQuote(uid)
+	assets, er := nosql.GetAssetsByQuote(uid, 0, 0)
 	if er != nil {
 		return nil, er
 	}

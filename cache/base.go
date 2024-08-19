@@ -88,6 +88,21 @@ func (mine *cacheContext) GetThumb(uid string) *ThumbInfo {
 	return nil
 }
 
+func getPageStart(page, num uint32) (uint32, uint32) {
+	var start uint32
+	if page < 1 {
+		page = 0
+		num = 0
+		start = 0
+	} else {
+		if num < 1 {
+			num = 10
+		}
+		start = (page - 1) * num
+	}
+	return start, num
+}
+
 func (mine *cacheContext) GetThumbsByOwner(uid string) []*ThumbInfo {
 	array, err := nosql.GetThumbsByOwner(uid)
 	if err == nil {

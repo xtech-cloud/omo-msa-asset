@@ -143,6 +143,10 @@ func (mine *AssetService) GetStatistic(ctx context.Context, in *pb.RequestFilter
 	inLog(path, in)
 	if in.Key == "quote" {
 		out.Count = cache.Context().GetAssetCount(in.Value)
+	} else if in.Key == "quote_creator" {
+		out.Count = cache.Context().GetAssetCountByQuoteCreator(in.Value, in.Operator)
+	} else if in.Key == "owner_creator" {
+		out.Count = cache.Context().GetAssetCountByOwnerCreator(in.Value, in.Operator)
 	}
 	out.Status = outLog(path, fmt.Sprintf("the length = %d", len(out.List)))
 	return nil
@@ -171,6 +175,8 @@ func (mine *AssetService) GetByFilter(ctx context.Context, in *pb.RequestFilter,
 		}
 	} else if in.Key == "quote" {
 		total, pages, list = cache.Context().GetAssetsByQuote(in.Owner, in.Value, in.Page, in.Number)
+	} else if in.Key == "quote_creator" {
+		total, pages, list = cache.Context().GetAssetsByQuoteCreator(in.Value, in.Operator, in.Page, in.Number)
 	} else if in.Key == "owner_type" {
 		tp, err := strconv.Atoi(in.Value)
 		if err != nil {
@@ -178,6 +184,13 @@ func (mine *AssetService) GetByFilter(ctx context.Context, in *pb.RequestFilter,
 			return nil
 		}
 		list = cache.Context().GetAssetsByOwnerType(in.Owner, tp)
+	} else if in.Key == "quote_status" {
+		st, err := strconv.Atoi(in.Value)
+		if err != nil {
+			out.Status = outError(path, err.Error(), pb.ResultStatus_DBException)
+			return nil
+		}
+		total, pages, list = cache.Context().GetAssetsByQuoteStatus(in.Owner, uint32(st), in.Page, in.Number)
 	}
 	out.List = make([]*pb.AssetInfo, 0, len(list))
 	for _, info := range list {

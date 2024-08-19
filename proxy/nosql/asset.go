@@ -5,6 +5,7 @@ import (
 	"errors"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"time"
 )
 
@@ -291,10 +292,30 @@ func GetAssetsByOwnerStatus(owner string, st uint8) ([]*Asset, error) {
 	return items, nil
 }
 
-func GetAssetsByQuote(quote string) ([]*Asset, error) {
+func GetAssetsByQuoteStatus(quote string, st uint8, start, num int64) ([]*Asset, error) {
+	var items = make([]*Asset, 0, 20)
+	filter := bson.M{"quote": quote, "status": st, TimeDeleted: 0}
+	opts := options.Find().SetSort(bson.D{{TimeCreated, -1}}).SetLimit(num).SetSkip(start)
+	cursor, err1 := findManyByOpts(TableAssets, filter, opts)
+	if err1 != nil {
+		return nil, err1
+	}
+	for cursor.Next(context.Background()) {
+		var node = new(Asset)
+		if err := cursor.Decode(&node); err != nil {
+			return nil, err
+		} else {
+			items = append(items, node)
+		}
+	}
+	return items, nil
+}
+
+func GetAssetsByQuote(quote string, start, num int64) ([]*Asset, error) {
 	var items = make([]*Asset, 0, 20)
 	filter := bson.M{"quote": quote, TimeDeleted: 0}
-	cursor, err1 := findMany(TableAssets, filter, 0)
+	opts := options.Find().SetSort(bson.D{{TimeCreated, -1}}).SetLimit(num).SetSkip(start)
+	cursor, err1 := findManyByOpts(TableAssets, filter, opts)
 	if err1 != nil {
 		return nil, err1
 	}
@@ -315,10 +336,35 @@ func GetAssetsCountByQuote(quote string) int64 {
 	return num
 }
 
-func GetAssetsByOwnerQuote(owner, quote string) ([]*Asset, error) {
+func GetAssetsCountByQuoteCreator(quote, creator string) int64 {
+	filter := bson.M{"quote": quote, "creator": creator, TimeDeleted: 0}
+	num, _ := getCountByFilter(TableAssets, filter)
+	return num
+}
+
+func GetAssetsCountByOwnerCreator(owner, creator string) int64 {
+	filter := bson.M{"owner": owner, "creator": creator, TimeDeleted: 0}
+	num, _ := getCountByFilter(TableAssets, filter)
+	return num
+}
+
+func GetAssetsCountByOwnerQuote(owner, quote string) int64 {
+	filter := bson.M{"quote": quote, "owner": owner, TimeDeleted: 0}
+	num, _ := getCountByFilter(TableAssets, filter)
+	return num
+}
+
+func GetAssetsCountByQuoteStatus(quote string, st uint32) int64 {
+	filter := bson.M{"quote": quote, "status": st, TimeDeleted: 0}
+	num, _ := getCountByFilter(TableAssets, filter)
+	return num
+}
+
+func GetAssetsByOwnerQuote(owner, quote string, start, num int64) ([]*Asset, error) {
 	var items = make([]*Asset, 0, 20)
 	filter := bson.M{"owner": owner, "quote": quote, TimeDeleted: 0}
-	cursor, err1 := findMany(TableAssets, filter, 0)
+	opts := options.Find().SetSort(bson.D{{TimeCreated, -1}}).SetLimit(num).SetSkip(start)
+	cursor, err1 := findManyByOpts(TableAssets, filter, opts)
 	if err1 != nil {
 		return nil, err1
 	}
@@ -391,6 +437,25 @@ func GetAssetsByCreator(user string) ([]*Asset, error) {
 	var items = make([]*Asset, 0, 20)
 	filter := bson.M{"creator": user, TimeDeleted: 0}
 	cursor, err1 := findMany(TableAssets, filter, 0)
+	if err1 != nil {
+		return nil, err1
+	}
+	for cursor.Next(context.Background()) {
+		var node = new(Asset)
+		if err := cursor.Decode(&node); err != nil {
+			return nil, err
+		} else {
+			items = append(items, node)
+		}
+	}
+	return items, nil
+}
+
+func GetAssetsByQuoteCreator(quote, user string, start, num int64) ([]*Asset, error) {
+	var items = make([]*Asset, 0, 20)
+	filter := bson.M{"quote": quote, "creator": user, TimeDeleted: 0}
+	opts := options.Find().SetSort(bson.D{{TimeCreated, -1}}).SetLimit(num).SetSkip(start)
+	cursor, err1 := findManyByOpts(TableAssets, filter, opts)
 	if err1 != nil {
 		return nil, err1
 	}
