@@ -88,7 +88,7 @@ func (mine *AssetService) AddOne(ctx context.Context, in *pb.ReqAssetAdd, out *p
 
 func (mine *AssetService) GetOne(ctx context.Context, in *pb.RequestInfo, out *pb.ReplyAssetOne) error {
 	path := "asset.getOne"
-	inLog(path, in)
+	//inLog(path, in)
 	var info *cache.AssetInfo
 	if len(in.Uid) < 1 {
 		info = cache.Context().GetAssetByKey(in.Operator)
@@ -100,7 +100,7 @@ func (mine *AssetService) GetOne(ctx context.Context, in *pb.RequestInfo, out *p
 		return nil
 	}
 	out.Info = switchAsset(in.Owner, info)
-	out.Status = outLog(path, out)
+	out.Status = outNonLog()
 	return nil
 }
 

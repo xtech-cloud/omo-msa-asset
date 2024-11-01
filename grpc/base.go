@@ -9,13 +9,13 @@ import (
 func outError(name, msg string, code pb.ResultStatus) *pb.ReplyStatus {
 	logger.Warnf("[error.%s]:code = %d, msg = %s", name, code, msg)
 	tmp := &pb.ReplyStatus{
-		Code: uint32(code),
+		Code:  uint32(code),
 		Error: msg,
 	}
 	return tmp
 }
 
-func inLog(name, data interface{})  {
+func inLog(name, data interface{}) {
 	bytes, _ := json.Marshal(data)
 	msg := byteString(bytes)
 	logger.Infof("[in.%s]:data = %s", name, msg)
@@ -26,7 +26,15 @@ func outLog(name, data interface{}) *pb.ReplyStatus {
 	msg := byteString(bytes)
 	logger.Infof("[out.%s]:data = %s", name, msg)
 	tmp := &pb.ReplyStatus{
-		Code: 0,
+		Code:  0,
+		Error: "",
+	}
+	return tmp
+}
+
+func outNonLog() *pb.ReplyStatus {
+	tmp := &pb.ReplyStatus{
+		Code:  0,
 		Error: "",
 	}
 	return tmp

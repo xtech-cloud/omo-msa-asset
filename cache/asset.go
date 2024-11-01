@@ -37,6 +37,7 @@ const (
 	StatusPrivate uint8 = 0
 	StatusPending uint8 = 1 //待审
 	StatusPublish uint8 = 2 //审核通过
+	StatusVisible uint8 = 3 //可展示
 )
 
 type AssetInfo struct {
