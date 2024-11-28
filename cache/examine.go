@@ -10,6 +10,7 @@ import (
 )
 
 const (
+	Detected_Pend    int = 0   //未处理
 	BD_Conclusion    int = 101 //合规
 	BD_NonConclusion int = 102 //不合规
 	BD_Uncertain     int = 103 //疑似

@@ -70,10 +70,19 @@ func TestDetectFaces() {
 func (mine *cacheContext) CheckThumbs() {
 	dbs, _ := nosql.GetThumbsByUser("")
 	for _, db := range dbs {
-		if db.Status == 0 {
+		if db.Status == uint32(Detected_Pend) {
 			info := new(ThumbInfo)
 			info.initInfo(db)
-			mine.addPendingThumb(info, false)
+			if len(info.bs64) < 2 && len(info.File) > 2 {
+				url := GetURL(info.File, true)
+				_, bs, er := downloadAssetToB64(url)
+				if er == nil {
+					info.bs64 = bs
+					mine.addPendingThumb(info, false)
+				}
+			} else {
+
+			}
 		}
 	}
 	for i := 0; i < MaxTask; i += 1 {

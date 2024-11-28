@@ -98,6 +98,7 @@ type FaceAddReq struct {
 	User    string `json:"user_id"`
 	Meta    string `json:"user_info"`
 	Quality string `json:"quality_control"`
+	Action  string `json:"action_type"`
 }
 
 func searchFaceByOne(info *FaceSearchReq) (*FaceSearchResult, error, int) {

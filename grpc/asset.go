@@ -211,7 +211,14 @@ func (mine *AssetService) GetByOwner(ctx context.Context, in *pb.RequestInfo, ou
 	}
 	var list []*cache.AssetInfo
 	if in.Operator == "publish" {
-		list = cache.Context().GetPublishAssetsByOwner(in.Owner)
+		var st = uint32(cache.StatusPublish)
+		if len(in.Uid) > 0 {
+			ss, _ := strconv.ParseUint(in.Uid, 10, 32)
+			if ss == uint64(cache.StatusVisible) {
+				st = uint32(ss)
+			}
+		}
+		list = cache.Context().GetPublishAssetsByOwner(in.Owner, st)
 	} else {
 		list = cache.Context().GetAssetsByOwner(in.Owner)
 	}

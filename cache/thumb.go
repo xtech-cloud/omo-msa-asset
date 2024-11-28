@@ -58,7 +58,7 @@ func CreateThumb(asset, owner, bs64, quote, group, operator string, bts []byte, 
 	temp.Meta = ""
 	temp.Location = info.Location
 	temp.bs64 = bs64
-	temp.Status = 0
+	temp.Status = uint32(Detected_Pend)
 	return temp
 }
 
@@ -198,7 +198,7 @@ func (mine *ThumbInfo) SearchUsers() ([]*UserResult, error) {
 	req.Type = ImageTypeBase64
 	req.Image = mine.bs64
 	req.Groups = mine.Group
-	req.Quality = QualityNone
+	req.Quality = QualityLow
 	req.MaxUser = 10
 	req.Threshold = 80
 	result, err, code := searchFaceByOne(req)
@@ -255,7 +255,9 @@ func (mine *ThumbInfo) RegisterFace(user, group string) error {
 	req.Image = mine.bs64
 	req.Group = group
 	req.User = id
-	req.Quality = QualityNone
+	req.Quality = QualityLow
+	req.Action = "APPEND"
+
 	req.Meta = fmt.Sprintf(`"user":"%s", "thumb":"%s"`, id, mine.UID)
 	_, code, err := registerUserFace(req)
 	if err != nil && code != ErrorCodeFaceExist {

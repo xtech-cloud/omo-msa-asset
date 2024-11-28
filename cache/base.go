@@ -40,7 +40,7 @@ func PublishSystemAssets() {
 	dbs, _ := nosql.GetAssetsByOwner("system")
 	for _, db := range dbs {
 		if db.Status != StatusPublish {
-			_ = nosql.UpdateAssetStatus(db.UID.Hex(), db.Operator, StatusPublish)
+			_ = nosql.UpdateAssetStatus(db.UID.Hex(), db.Operator, StatusVisible)
 		}
 	}
 }

@@ -17,7 +17,7 @@ const (
 	AssetTypePerson       = 0
 	AssetTypeGroup        = 1 //组织
 	AssetTypeWindowModel  = 2 //windows 平台模型
-	AssetTypeAndroidModel = 3 //android 平台模型
+	AssetTypeAndroidModel = 3 //web 平台模型
 	AssetTypeAudio        = 4
 	AssetTypeVideo        = 5
 	AssetTypePortrait     = 6 //系统头像
@@ -161,8 +161,8 @@ func (mine *cacheContext) GetAssetsByOwner(uid string) []*AssetInfo {
 	return list
 }
 
-func (mine *cacheContext) GetPublishAssetsByOwner(uid string) []*AssetInfo {
-	array, err := nosql.GetAssetsByOwnerStatus(uid, StatusPublish)
+func (mine *cacheContext) GetPublishAssetsByOwner(uid string, st uint32) []*AssetInfo {
+	array, err := nosql.GetAssetsByOwnerStatus(uid, uint8(st))
 	if err != nil {
 		return make([]*AssetInfo, 0, 1)
 	}

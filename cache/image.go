@@ -143,6 +143,15 @@ func downloadAsset(url string) (int64, *bytes.Buffer, error) {
 	return l, buf, nil
 }
 
+func downloadAssetToB64(url string) (int64, string, error) {
+	l, bts, er := downloadAsset(url)
+	if er != nil {
+		return 0, "", er
+	}
+	data := base64.StdEncoding.EncodeToString(bts.Bytes())
+	return l, data, nil
+}
+
 func clipImageFace(buf *bytes.Buffer, loc proxy.LocationInfo) (string, []byte, error) {
 	if buf == nil {
 		return "", nil, errors.New("the buf is nil")
