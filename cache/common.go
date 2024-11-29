@@ -90,6 +90,22 @@ func (mine *cacheContext) CheckThumbs() {
 	}
 }
 
+func (mine *cacheContext) CheckStatus() {
+	dbs, _ := nosql.GetAssetsByStatus(StatusPublish)
+	for _, db := range dbs {
+		_ = nosql.UpdateAssetStatus(db.UID.Hex(), db.Operator, StatusVisible)
+	}
+}
+
+func PublishSystemAssets() {
+	dbs, _ := nosql.GetAssetsByOwner("system")
+	for _, db := range dbs {
+		if db.Status != StatusPublish {
+			_ = nosql.UpdateAssetStatus(db.UID.Hex(), db.Operator, StatusVisible)
+		}
+	}
+}
+
 func (mine *cacheContext) initPool() {
 	//mine.assetPool, _ = ants.NewPool(MaxTask, ants.WithOptions(ants.Options{PreAlloc: true}))
 	//mine.thumbPool, _ = ants.NewPool(MaxTask, ants.WithOptions(ants.Options{PreAlloc: true}))

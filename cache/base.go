@@ -36,15 +36,6 @@ func Context() *cacheContext {
 	return cacheCtx
 }
 
-func PublishSystemAssets() {
-	dbs, _ := nosql.GetAssetsByOwner("system")
-	for _, db := range dbs {
-		if db.Status != StatusPublish {
-			_ = nosql.UpdateAssetStatus(db.UID.Hex(), db.Operator, StatusVisible)
-		}
-	}
-}
-
 func saveImage(bts []byte, path string) error {
 	reader := bytes.NewReader(bts)
 	img, _ := jpeg.Decode(reader)
