@@ -296,7 +296,7 @@ func (mine *cacheContext) PublishAssetsEntity(entity, operator string) error {
 	assets, _ := nosql.GetAssetsByOwner(entity)
 	for _, asset := range assets {
 		if asset.Status != StatusPublish {
-			_ = nosql.UpdateAssetStatus(asset.UID.Hex(), operator, StatusPublish)
+			_ = nosql.UpdateAssetStatus(asset.UID.Hex(), operator, StatusVisible)
 		}
 	}
 	return nil
