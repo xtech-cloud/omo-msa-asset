@@ -95,6 +95,14 @@ func (mine *cacheContext) CheckStatus() {
 	for _, db := range dbs {
 		_ = nosql.UpdateAssetStatus(db.UID.Hex(), db.Operator, StatusVisible)
 	}
+	dbs2, _ := nosql.GetAssetsByType(AssetTypeWindowModel)
+	for _, db := range dbs2 {
+		_ = nosql.UpdateAssetStatus(db.UID.Hex(), db.Operator, StatusVisible)
+	}
+	dbs3, _ := nosql.GetAssetsByType(AssetTypeAndroidModel)
+	for _, db := range dbs3 {
+		_ = nosql.UpdateAssetStatus(db.UID.Hex(), db.Operator, StatusVisible)
+	}
 }
 
 func PublishSystemAssets() {
