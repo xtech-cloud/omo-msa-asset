@@ -230,6 +230,20 @@ func (mine *cacheContext) GetAssetsByOwnerType(owner string, tp int) []*AssetInf
 	return list
 }
 
+func (mine *cacheContext) GetAssetsByOwnersType(owners []string, tp int) []*AssetInfo {
+	list := make([]*AssetInfo, 0, len(owners)*2)
+	for _, owner := range owners {
+		array, _ := nosql.GetAssetsByOwnerType(owner, uint8(tp))
+		for _, asset := range array {
+			info := new(AssetInfo)
+			info.initInfo(asset)
+			list = append(list, info)
+		}
+	}
+
+	return list
+}
+
 func (mine *cacheContext) GetAssetsByQuoteStatus(quote string, st, page, num uint32) (uint32, uint32, []*AssetInfo) {
 	start, number := getPageStart(page, num)
 	total := nosql.GetAssetsCountByQuoteStatus(quote, st)

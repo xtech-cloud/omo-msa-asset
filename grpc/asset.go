@@ -184,6 +184,13 @@ func (mine *AssetService) GetByFilter(ctx context.Context, in *pb.RequestFilter,
 			return nil
 		}
 		list = cache.Context().GetAssetsByOwnerType(in.Owner, tp)
+	} else if in.Key == "owners_type" {
+		tp, err := strconv.Atoi(in.Value)
+		if err != nil {
+			out.Status = outError(path, err.Error(), pb.ResultStatus_DBException)
+			return nil
+		}
+		list = cache.Context().GetAssetsByOwnersType(in.Values, tp)
 	} else if in.Key == "quote_status" {
 		st, err := strconv.Atoi(in.Value)
 		if err != nil {
