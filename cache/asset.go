@@ -654,7 +654,10 @@ func (mine *AssetInfo) URL() string {
 }
 
 func (mine *AssetInfo) SourceURL() string {
-	if mine.Snapshot != "" {
+	if len(mine.Small) > 0 {
+		return GetURL(mine.Small, false)
+	}
+	if len(mine.Snapshot) > 0 {
 		return GetURL(mine.Snapshot, false)
 	}
 	return GetURL(mine.UUID, false)
